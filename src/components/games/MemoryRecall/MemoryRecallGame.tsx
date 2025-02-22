@@ -3,6 +3,8 @@ import Grid from './Grid';
 import DistractionGame from './DistractionGame';
 import { generateRandomObjects, generateGridPositions } from '@/utils/gameUtils';
 import { GamePhase, GameObject, GameMetrics } from '@/types/game';
+import CognitiveMetricsCharts from './CognitiveMetricsCharts';
+import { calculateCognitiveIndices, calculateDifficultyParameters, checkLevelAdvancement } from '@/utils/cognitiveMetrics';
 
 export default function MemoryRecallGame() {
   const [gamePhase, setGamePhase] = useState<GamePhase>('start');
@@ -19,34 +21,29 @@ export default function MemoryRecallGame() {
     objectPlacements: [],
     hesitationTime: 0
   });
-  const [objectCount, setObjectCount] = useState(5);
-  const [attempts, setAttempts] = useState<Record<string, number>>({});
+  const [level, setLevel] = useState(1);
+  const [previousScores, setPreviousScores] = useState<number[]>([]);
+  const [attempts, setAttempts] = useState(0);
   const [firstMoveTime, setFirstMoveTime] = useState<number | null>(null);
   const [startTime, setStartTime] = useState(0);
+  const [cognitiveIndices, setCognitiveIndices] = useState<any>(null);
 
   const initializeGame = () => {
-    const gridSize = 5;
+    const { gridSize, objectCount, memorizationTime } = calculateDifficultyParameters(level);
     const positions = generateGridPositions(gridSize);
+    const objects = generateRandomObjects(objectCount, positions);
     
-    // Always generate exactly 3 objects
-    const objects = generateRandomObjects(3, positions);
-    
-    // Verify we have exactly 3 objects before setting state
-    if (objects.length === 3) {
-      setOriginalObjects(objects);
-      setTimeLeft(5);
-      setGamePhase('exploration');
-    } else {
-      // If somehow we don't have 3 objects, try again
-      initializeGame();
-    }
+    setOriginalObjects(objects);
+    setTimeLeft(memorizationTime);
+    setGamePhase('exploration');
+    setAttempts(prev => prev + 1);
   };
 
   useEffect(() => {
     if (gamePhase === 'start') {
       initializeGame();
     }
-  }, [gamePhase, objectCount]);
+  }, [gamePhase, level]);
 
   useEffect(() => {
     if (gamePhase === 'exploration' && timeLeft > 0) {
@@ -74,22 +71,20 @@ export default function MemoryRecallGame() {
 
     const placedObject = availableObjects.find(obj => obj.id === objectId);
     if (placedObject) {
-      // Simply place the object and remove it from available objects
       setAvailableObjects(prev => prev.filter(obj => obj.id !== objectId));
       setPlacedObjects(prev => [...prev, { ...placedObject, position }]);
     }
   };
 
   const handleSubmit = () => {
-    // Calculate accuracy only when submitting
     const accuracy = (placedObjects.filter(obj => {
       const original = originalObjects.find(o => o.id === obj.id);
       return original?.position[0] === obj.position[0] && 
              original?.position[1] === obj.position[1];
     }).length / originalObjects.length) * 100;
 
-    setMetrics({
-      explorationTime: 5,
+    const currentMetrics: GameMetrics = {
+      explorationTime: timeLeft,
       recallTime: Date.now() - startTime,
       accuracy,
       distractionScore,
@@ -101,10 +96,26 @@ export default function MemoryRecallGame() {
         timeTaken: Date.now() - startTime,
         isCorrect: originalObjects.find(o => o.id === obj.id)?.position === obj.position
       }))
-    });
+    };
 
-    if (accuracy > 80) {
-      setObjectCount(prev => Math.min(prev + 1, 8));
+    setMetrics(currentMetrics);
+
+    // Calculate cognitive indices
+    const indices = calculateCognitiveIndices(
+      currentMetrics,
+      originalObjects,
+      calculateDifficultyParameters(level).gridSize
+    );
+    setCognitiveIndices(indices);
+
+    // Update previous scores and check for level advancement
+    const newScores = [...previousScores, indices.ocps].slice(-5);
+    setPreviousScores(newScores);
+
+    if (checkLevelAdvancement(indices, attempts, newScores)) {
+      setLevel(prev => prev + 1);
+      setAttempts(0);
+      setPreviousScores([]);
     }
 
     setGamePhase('result');
@@ -198,43 +209,101 @@ export default function MemoryRecallGame() {
       )}
 
       {gamePhase === 'result' && (
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Game Complete!</h2>
-          <div className="flex justify-center mb-4">
-            {[1, 2, 3, 4, 5].map((star, index) => (
-              <span key={star} className="text-4xl">
-                {index < Math.floor(metrics.accuracy / 20) ? '⭐' : '☆'}
-              </span>
-            ))}
+        <div className="text-center max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-xl">
+          <h2 className="text-3xl font-bold mb-6 text-purple-800">Cognitive Assessment Results</h2>
+          
+          {/* Level and Progress Information */}
+          <div className="mb-6">
+            <div className="text-xl font-semibold text-purple-600">
+              Level {level} - Attempt {attempts}/3
+            </div>
+            <div className="text-sm text-gray-600">
+              {attempts < 3 ? `${3 - attempts} more attempts needed before possible advancement` : 
+               cognitiveIndices?.ocps >= 75 ? 'Ready for next level!' : 'Keep practicing to advance'}
+            </div>
           </div>
-          <p className="text-xl mb-2">
-            Great job! You restored {placedObjects.length}/{originalObjects.length} objects!
-          </p>
-          <p className="text-xl mb-2">Accuracy: {Math.round(metrics.accuracy)}%</p>
-          <p className="text-xl mb-4">Distraction Score: {distractionScore}</p>
-          {metrics.accuracy < 100 && (
-            <p className="text-lg mb-4 text-purple-600">Try again for perfection!</p>
-          )}
-          <button
-            onClick={() => {
-              setGamePhase('start');
-              setPlacedObjects([]);
-              setAvailableObjects([]);
-              setAttempts({});
-              setFirstMoveTime(null);
-              setMetrics({
-                explorationTime: 0,
-                recallTime: 0,
-                accuracy: 0,
-                distractionScore: 0,
-                objectPlacements: [],
-                hesitationTime: 0
-              });
-            }}
-            className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition"
-          >
-            Play Again
-          </button>
+
+          {/* Cognitive Indices Display */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="space-y-4">
+              {cognitiveIndices && (
+                <>
+                  <div className="bg-purple-50 p-4 rounded-xl">
+                    <h3 className="text-xl font-semibold text-purple-800 mb-2">Spatial Memory Index</h3>
+                    <div className="text-lg mb-1">{Math.round(cognitiveIndices.smi)}%</div>
+                    <div className="text-sm text-gray-600">Threshold: 75%</div>
+                  </div>
+
+                  <div className="bg-blue-50 p-4 rounded-xl">
+                    <h3 className="text-xl font-semibold text-blue-800 mb-2">Processing Speed Index</h3>
+                    <div className="text-lg mb-1">{Math.round(cognitiveIndices.psi)}%</div>
+                    <div className="text-sm text-gray-600">Threshold: 70%</div>
+                  </div>
+
+                  <div className="bg-green-50 p-4 rounded-xl">
+                    <h3 className="text-xl font-semibold text-green-800 mb-2">Attention Span Index</h3>
+                    <div className="text-lg mb-1">{Math.round(cognitiveIndices.asi)}%</div>
+                    <div className="text-sm text-gray-600">Threshold: 80%</div>
+                  </div>
+
+                  <div className="bg-yellow-50 p-4 rounded-xl">
+                    <h3 className="text-xl font-semibold text-yellow-800 mb-2">Distraction Resistance</h3>
+                    <div className="text-lg mb-1">{Math.round(cognitiveIndices.dri)}%</div>
+                    <div className="text-sm text-gray-600">Threshold: 65%</div>
+                  </div>
+
+                  <div className="bg-pink-50 p-4 rounded-xl">
+                    <h3 className="text-xl font-semibold text-pink-800 mb-2">Sequential Memory Index</h3>
+                    <div className="text-lg mb-1">{Math.round(cognitiveIndices.seqi)}%</div>
+                    <div className="text-sm text-gray-600">Threshold: 70%</div>
+                  </div>
+
+                  <div className="bg-indigo-50 p-4 rounded-xl">
+                    <h3 className="text-xl font-semibold text-indigo-800 mb-2">Overall Performance</h3>
+                    <div className="text-lg mb-1">{Math.round(cognitiveIndices.ocps)}%</div>
+                    <div className="text-sm text-gray-600">Threshold: 75%</div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Charts */}
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <CognitiveMetricsCharts metrics={metrics} cognitiveIndices={cognitiveIndices} />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => {
+                setGamePhase('start');
+                setPlacedObjects([]);
+                setAvailableObjects([]);
+                setFirstMoveTime(null);
+                setMetrics({
+                  explorationTime: 0,
+                  recallTime: 0,
+                  accuracy: 0,
+                  distractionScore: 0,
+                  objectPlacements: [],
+                  hesitationTime: 0
+                });
+              }}
+              className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition"
+            >
+              Play Again
+            </button>
+            <button
+              onClick={() => {
+                // TODO: Add functionality to save or share results
+                alert('Results saved!');
+              }}
+              className="bg-gray-100 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-200 transition"
+            >
+              Save Results
+            </button>
+          </div>
         </div>
       )}
     </div>
