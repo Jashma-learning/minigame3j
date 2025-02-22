@@ -15,7 +15,7 @@ export function generateRandomObjects(
   // Shuffle positions to get random unique positions
   const shuffledPositions = [...positions].sort(() => Math.random() - 0.5);
   
-  // Take exactly the number of positions we need (3 in this case)
+  // Take exactly the number of positions we need
   const selectedPositions = shuffledPositions.slice(0, count);
   
   // Generate objects with unique positions
@@ -26,7 +26,6 @@ export function generateRandomObjects(
     return {
       id: `object-${index}`,
       position,
-      rotation: [0, Math.random() * Math.PI * 2],
       geometry,
       color,
       glow: Math.random() > 0.5
@@ -62,7 +61,7 @@ export function calculateScore(
   return Math.min(100, accuracy * (1 + timeBonus));
 }
 
-function calculateDistance(pos1: [number, number], pos2: [number, number]): number {
+export function calculateDistance(pos1: [number, number], pos2: [number, number]): number {
   const [x1, y1] = pos1;
   const [x2, y2] = pos2;
   return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));

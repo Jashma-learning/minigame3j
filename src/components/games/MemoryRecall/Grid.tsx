@@ -51,7 +51,6 @@ const Grid: React.FC<GridProps> = ({ objects, isInteractive, onObjectPlaced }) =
       
       const objectId = e.dataTransfer.getData('text');
       if (objectId) {
-        console.log('Dropping object:', objectId, 'at position:', x, y);
         onObjectPlaced(objectId, [x, y]);
       }
     }
@@ -91,7 +90,9 @@ const Grid: React.FC<GridProps> = ({ objects, isInteractive, onObjectPlaced }) =
                   w-full h-full flex items-center justify-center text-2xl
                   transition-transform duration-200
                   ${isHighlighted ? 'scale-110' : ''}
+                  ${object.glow ? 'animate-pulse' : ''}
                 `}
+                style={{ color: object.color }}
               >
                 {renderObjectIcon(object.geometry)}
               </div>

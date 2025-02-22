@@ -1,177 +1,54 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { useThree, ThreeEvent } from '@react-three/fiber';
-import { Mesh } from 'three';
-import { useDrag } from '@use-gesture/react';
+import React from 'react';
 import { GameObject } from '@/types/game';
 
 interface DraggableObjectProps {
   object: GameObject;
-  isInteractive: boolean;
-  onPlaced?: (objectId: string, position: [number, number]) => void;
-  initialPosition: [number, number];
+  onDragStart: (objectId: string) => void;
 }
 
-export default function DraggableObject({ 
-  object, 
-  isInteractive, 
-  onPlaced,
-  initialPosition,
-}: DraggableObjectProps) {
-  const meshRef = useRef<Mesh>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const { size, viewport } = useThree();
-  const [position, setPosition] = useState<[number, number]>(initialPosition);
-  const [hover, setHover] = useState(false);
-
-  const bind = useDrag(
-    ({ active, movement: [x, y], last }) => {
-      if (isInteractive) {
-        setIsDragging(active);
-
-        const aspect = size.width / viewport.width;
-        const moveX = x / aspect;
-        const moveY = y / aspect;
-
-        const newPosition: [number, number] = [
-          initialPosition[0] + moveX * 0.01,
-          initialPosition[1] + moveY * 0.01,
-        ];
-
-        setPosition(newPosition);
-
-        if (last && onPlaced) {
-          onPlaced(object.id, newPosition);
-        }
-      }
-    },
-    { enabled: isInteractive }
-  );
-
-  const renderGeometry = () => {
-    switch (object.geometry) {
+const DraggableObject: React.FC<DraggableObjectProps> = ({ object, onDragStart }) => {
+  const renderObjectIcon = (geometry: string) => {
+    switch (geometry) {
       case 'crystal':
-        return (
-          <>
-            <octahedronGeometry args={[0.3]} />
-            <meshStandardMaterial
-              color={object.color}
-              metalness={0.9}
-              roughness={0.1}
-              emissive={object.color}
-              emissiveIntensity={hover || isDragging ? 0.5 : 0.2}
-              transparent
-              opacity={isDragging ? 0.7 : 1}
-            />
-          </>
-        );
+        return '💎';
       case 'key':
-        return (
-          <>
-            <cylinderGeometry args={[0.1, 0.1, 0.4]} />
-            <meshStandardMaterial
-              color={object.color}
-              metalness={0.8}
-              roughness={0.2}
-              emissive={object.color}
-              emissiveIntensity={hover || isDragging ? 0.5 : 0.2}
-              transparent
-              opacity={isDragging ? 0.7 : 1}
-            />
-          </>
-        );
+        return '🗝️';
       case 'dragon':
-        return (
-          <>
-            <torusKnotGeometry args={[0.2, 0.1]} />
-            <meshStandardMaterial
-              color={object.color}
-              metalness={0.7}
-              roughness={0.3}
-              emissive={object.color}
-              emissiveIntensity={hover || isDragging ? 0.5 : 0.2}
-              transparent
-              opacity={isDragging ? 0.7 : 1}
-            />
-          </>
-        );
+        return '🐉';
       case 'potion':
-        return (
-          <>
-            <sphereGeometry args={[0.25]} />
-            <meshStandardMaterial
-              color={object.color}
-              metalness={0.3}
-              roughness={0.7}
-              emissive={object.color}
-              emissiveIntensity={hover || isDragging ? 0.5 : 0.2}
-              transparent
-              opacity={isDragging ? 0.7 : 1}
-            />
-          </>
-        );
+        return '🧪';
+      case 'compass':
+        return '🧭';
       default:
-        return (
-          <>
-            <boxGeometry args={[0.3, 0.3, 0.3]} />
-            <meshStandardMaterial
-              color={object.color}
-              metalness={0.5}
-              roughness={0.5}
-              emissive={object.color}
-              emissiveIntensity={hover || isDragging ? 0.5 : 0.2}
-              transparent
-              opacity={isDragging ? 0.7 : 1}
-            />
-          </>
-        );
+        return '✨';
     }
   };
 
   return (
-    <group position={[position[0], 0.5, position[1]]}>
-      {/* Magical glow effect */}
-      {(hover || isDragging || object.glow) && (
-        <pointLight
-          position={[0, 0.5, 0]}
-          intensity={0.5}
-          color={object.color}
-          distance={2}
-          decay={2}
-        />
-      )}
-
-      {/* Shadow */}
-      <mesh
-        position={[0, -0.49, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        receiveShadow
-      >
-        <circleGeometry args={[0.2, 32]} />
-        <meshBasicMaterial
-          color={isDragging ? "#4CAF50" : "#000000"}
-          transparent
-          opacity={0.2}
-        />
-      </mesh>
-
-      {/* Object */}
-      <mesh
-        ref={meshRef}
-        castShadow
-        receiveShadow
-        onPointerOver={() => setHover(true)}
-        onPointerOut={() => setHover(false)}
-        onClick={(e: ThreeEvent<MouseEvent>) => {
-          if (isInteractive) {
-            e.stopPropagation();
-          }
-        }}
-        {...(bind() as any)}
-      >
-        {renderGeometry()}
-      </mesh>
-    </group>
+    <div
+      className={`
+        w-12 h-12 flex items-center justify-center
+        bg-purple-100 rounded-lg cursor-grab active:cursor-grabbing
+        hover:bg-purple-200 transition-colors
+        ${object.glow ? 'animate-pulse' : ''}
+      `}
+      draggable="true"
+      onDragStart={(e) => {
+        e.currentTarget.classList.add('opacity-50');
+        e.dataTransfer.setData('text', object.id);
+        e.dataTransfer.effectAllowed = 'move';
+        onDragStart(object.id);
+      }}
+      onDragEnd={(e) => {
+        e.currentTarget.classList.remove('opacity-50');
+      }}
+      style={{ color: object.color }}
+    >
+      {renderObjectIcon(object.geometry)}
+    </div>
   );
-} 
+};
+
+export default DraggableObject; 

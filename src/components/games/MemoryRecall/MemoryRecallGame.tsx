@@ -5,6 +5,7 @@ import { generateRandomObjects, generateGridPositions } from '@/utils/gameUtils'
 import { GamePhase, GameObject, GameMetrics } from '@/types/game';
 import CognitiveMetricsCharts from './CognitiveMetricsCharts';
 import { calculateCognitiveIndices, calculateDifficultyParameters, checkLevelAdvancement } from '@/utils/cognitiveMetrics';
+import DraggableObject from './DraggableObject';
 
 export default function MemoryRecallGame() {
   const [gamePhase, setGamePhase] = useState<GamePhase>('start');
@@ -167,21 +168,11 @@ export default function MemoryRecallGame() {
           <div className="flex flex-col gap-4">
             <div className="flex justify-center gap-4 p-4 bg-white rounded-lg shadow-md">
               {availableObjects.map((obj) => (
-                <div
+                <DraggableObject
                   key={obj.id}
-                  className="w-12 h-12 flex items-center justify-center bg-purple-100 rounded-lg cursor-grab active:cursor-grabbing hover:bg-purple-200 transition-colors"
-                  draggable="true"
-                  onDragStart={(e) => {
-                    e.currentTarget.classList.add('opacity-50');
-                    e.dataTransfer.setData('text', obj.id);
-                    e.dataTransfer.effectAllowed = 'move';
-                  }}
-                  onDragEnd={(e) => {
-                    e.currentTarget.classList.remove('opacity-50');
-                  }}
-                >
-                  {renderObjectIcon(obj.geometry)}
-                </div>
+                  object={obj}
+                  onDragStart={() => {}}
+                />
               ))}
             </div>
             <div className="w-96 h-96 border-4 border-purple-300 rounded-lg p-4 bg-white shadow-lg">

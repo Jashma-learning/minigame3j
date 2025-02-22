@@ -2,8 +2,10 @@ export type GamePhase = 'start' | 'exploration' | 'distraction' | 'recall' | 're
 
 export interface GameObject {
   id: string;
-  type: string;
   position: [number, number];
+  geometry: 'crystal' | 'key' | 'dragon' | 'potion' | 'compass';
+  color: string;
+  glow?: boolean;
 }
 
 export interface ObjectPlacement {
