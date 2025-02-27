@@ -16,6 +16,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <style>{`
+          body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+          }
+        `}</style>
+      </head>
       <body className={inter.className} suppressHydrationWarning>
         {children}
       </body>

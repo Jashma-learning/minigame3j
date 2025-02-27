@@ -7,7 +7,11 @@ import CognitiveMetricsCharts from './CognitiveMetricsCharts';
 import { calculateCognitiveIndices, calculateDifficultyParameters, checkLevelAdvancement } from '@/utils/cognitiveMetrics';
 import DraggableObject from './DraggableObject';
 
-export default function MemoryRecallGame() {
+interface MemoryRecallGameProps {
+  onComplete: (score: number) => void;
+}
+
+export default function MemoryRecallGame({ onComplete }: MemoryRecallGameProps) {
   const [gamePhase, setGamePhase] = useState<GamePhase>('start');
   const [timeLeft, setTimeLeft] = useState(5);
   const [originalObjects, setOriginalObjects] = useState<GameObject[]>([]);
