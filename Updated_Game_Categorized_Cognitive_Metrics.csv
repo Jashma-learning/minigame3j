@@ -1,0 +1,80 @@
+Game,Metric Name
+Memory Match,Memory_Recall_Accuracy_%
+Memory Match,Short_Term_Memory_Retention_s
+Memory Match,Sequential_Memory_Accuracy_%
+Memory Match,Memory_Decay_Rate_%
+Memory Match,Verbal_Working_Memory_Score
+Memory Match,Working_Memory_Span
+Memory Match,N_Back_Task_Performance_%
+Memory Match,Auditory_Working_Memory_%
+Stroop Challenge,Reaction_Time_ms
+Stroop Challenge,Selective_Attention_Score_%
+Stroop Challenge,Distractibility_Index_%
+Stroop Challenge,Attention_Shift_Accuracy_%
+Stroop Challenge,Impulse_Control_Score
+Stroop Challenge,Inhibitory_Control_Accuracy_%
+Stroop Challenge,Sustained_Attention_Duration_s
+Quick Reflex,Reaction_Time_ms
+Quick Reflex,Response_Latency_ms
+Quick Reflex,Motor_Response_Time_ms
+Quick Reflex,Speed_Accuracy_Tradeoff_Score
+Quick Reflex,Processing_Speed_Index
+Quick Reflex,Task_Completion_Time_s
+Quick Reflex,Motor_Coordination_Score
+Quick Reflex,Reaction_Inconsistency_%
+Pattern Puzzler,Pattern_Recognition_Accuracy_%
+Pattern Puzzler,Logical_Reasoning_Accuracy_%
+Pattern Puzzler,Hypothesis_Testing_Score
+Pattern Puzzler,Abstract_Thinking_Score
+Pattern Puzzler,Trial_and_Error_Ratio
+Pattern Puzzler,Causal_Inference_Ability_%
+Pattern Puzzler,Problem_Solving_Steps_Taken
+Pattern Puzzler,Cognitive_Problem_Formulation
+Spatial Navigator,3D_Spatial_Rotation_Accuracy_%
+Spatial Navigator,Mental_Rotation_Speed_ms
+Spatial Navigator,Navigation_Error_Rate_%
+Spatial Navigator,Spatial_Problem_Solving_%
+Spatial Navigator,Fine_Motor_Skills_%
+Spatial Navigator,Cognitive_Working_Capacity_%
+Tower of Planning,Backtracking_Moves
+Tower of Planning,Logical_Path_Efficiency_%
+Tower of Planning,Planning_Efficiency_%
+Tower of Planning,Task_Sustainability_Score
+Tower of Planning,Cognitive_Flexibility_Score_%
+Tower of Planning,Error_Correction_Speed_s
+Tower of Planning,Task_Sustainability_Score
+Tower of Planning,Cognitive_Load_Handling_Score
+Find the Odd One,Selective_Attention_Score_%
+Find the Odd One,Distractibility_Index_%
+Find the Odd One,Cognitive_Adaptability_Score
+Find the Odd One,Eye_Tracking_Stability_%
+Find the Odd One,Multitasking_Performance_%
+Find the Odd One,Error_Persistence_Rate_%
+Go/No-Go Game,Impulse_Control_Score
+Go/No-Go Game,Decision_Time_s
+Go/No-Go Game,Reaction_Time_Variability_%
+Go/No-Go Game,Decision_Making_Confidence_%
+Go/No-Go Game,Behavioral_Inhibition_Score
+Go/No-Go Game,Task_Switching_Efficiency_%
+Go/No-Go Game,Cognitive_Risk_Tolerance_%
+Go/No-Go Game,Frustration_Tolerance_Score
+Go/No-Go Game,Stress_Recovery_Speed_ms
+Go/No-Go Game,Risk_Taking_Tendency_%
+Go/No-Go Game,Frustration_Recovery_Time_s
+Story Builder,Language_Comprehension_Score
+Story Builder,Word_Complexity_Score_%
+Story Builder,Sentence_Coherence
+Story Builder,Verbal_Working_Memory_Score
+Story Builder,Sequential_Reasoning_Score
+Story Builder,Confidence_Score_%
+Story Builder,Resilience_Under_Pressure_%
+Story Builder,Social_Learning_Inclination
+Story Builder,Cognitive_Resilience_Score
+Maze Runner,Pathfinding_Efficiency_%
+Maze Runner,Navigation_Error_Rate_%
+Maze Runner,Planning_Efficiency_%
+Maze Runner,Time_Pressure_Handling_Score
+Maze Runner,Information_Processing_Speed_%
+Maze Runner,Cognitive_Working_Capacity_%
+Maze Runner,Cognitive_Endurance_Score
+Maze Runner,Dual_Task_Performance_%

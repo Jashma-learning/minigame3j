@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { GameProgressProvider } from "../contexts/GameProgressContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Memory Challenge Game",
-  description: "Test and improve your memory with this engaging memory game!",
+  title: "Cognitive Assessment Games",
+  description: "A series of cognitive assessment games for children",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
       <head>
@@ -26,7 +27,9 @@ export default function RootLayout({
         `}</style>
       </head>
       <body className={inter.className} suppressHydrationWarning>
-        {children}
+        <GameProgressProvider>
+          {children}
+        </GameProgressProvider>
       </body>
     </html>
   );

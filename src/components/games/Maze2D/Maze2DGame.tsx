@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { calculateCognitiveScores, generateCognitiveReport } from '@/utils/cognitiveAnalysis';
-import type { NavigationMetrics, CognitiveAssessment } from '@/types/cognitive';
-import CognitiveReport from '@/components/CognitiveReport';
-import { generateMaze2D } from './mazeUtils'; // Import maze generation function
+import { generateMaze2D } from './mazeUtils';
+import { useGameProgress } from '../../../contexts/GameProgressContext';
+import { getNextGame, isLastGame } from '../../../utils/gameSeriesConfig';
+import GameSubmission from '../../GameSubmission';
+import { Maze2DMetrics } from '../../../types/metrics';
 
 interface Cell {
   x: number;
@@ -23,33 +24,25 @@ interface PlayerState {
 }
 
 interface Maze2DGameProps {
-  cellSize: number;
-  onComplete?: (score: number) => void;
+  cellSize?: number;
+  onComplete?: (metrics: Maze2DMetrics) => void;
 }
 
-export default function Maze2DGame({ cellSize, onComplete }: Maze2DGameProps) {
+export default function Maze2DGame({ cellSize = 30, onComplete }: Maze2DGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const completionRef = useRef<{
-    isCompleted: boolean;
-    score: number;
-  }>({ isCompleted: false, score: 0 });
   const [currentLevel, setCurrentLevel] = useState(1);
-  const mazeSize = 15 + (currentLevel - 1) * 2; // Increase maze size with level
+  const mazeSize = 15 + (currentLevel - 1) * 2;
   const canvasWidth = mazeSize * cellSize;
   const canvasHeight = mazeSize * cellSize;
   
   const [maze, setMaze] = useState<Cell[][]>(generateMaze2D(mazeSize));
   const [player, setPlayer] = useState<PlayerState>({ x: 1, y: 1, collectibles: 0, puzzlesSolved: 0 });
   const [gameStarted, setGameStarted] = useState(false);
-  const [gameCompleted, setGameCompleted] = useState(false);
-  const [assessments, setAssessments] = useState<CognitiveAssessment[]>([]);
-  const [showReport, setShowReport] = useState(false);
-  const [showLevelComplete, setShowLevelComplete] = useState(false);
+  const [isGameComplete, setIsGameComplete] = useState(false);
   const [gameStartTime, setGameStartTime] = useState<number | null>(null);
   const previousPositions = useRef<{ x: number; y: number }[]>([]);
-
-  // Initialize game metrics
-  const [metrics, setMetrics] = useState<NavigationMetrics>({
+  const [totalCollectibles, setTotalCollectibles] = useState(0);
+  const [gameMetrics, setGameMetrics] = useState<Maze2DMetrics>({
     totalTime: 0,
     pathLength: 0,
     wrongTurns: 0,
@@ -57,19 +50,20 @@ export default function Maze2DGame({ cellSize, onComplete }: Maze2DGameProps) {
     idleTime: 0,
     collisions: 0,
     correctTurns: 0,
-    optimalPathLength: canvasWidth + canvasHeight - 2
+    collectiblesGathered: 0,
+    totalCollectibles: 0,
+    completionTime: 0,
+    accuracy: 0
   });
 
-  // Add state for total collectibles
-  const [totalCollectibles, setTotalCollectibles] = useState(0);
+  const { completeGame } = useGameProgress();
+  const nextGame = getNextGame('maze-2d');
 
-  // Modify resetLevel to count total collectibles
   const resetLevel = useCallback(() => {
     const newMazeSize = 15 + (currentLevel - 1) * 2;
     const newMaze = generateMaze2D(newMazeSize);
     setMaze(newMaze);
     
-    // Count total collectibles
     let collectibleCount = 0;
     newMaze.forEach(row => {
       row.forEach(cell => {
@@ -80,20 +74,15 @@ export default function Maze2DGame({ cellSize, onComplete }: Maze2DGameProps) {
     
     setPlayer({ x: 1, y: 1, collectibles: 0, puzzlesSolved: 0 });
     setGameStartTime(Date.now());
-    setShowLevelComplete(false);
-    setMetrics({
-      totalTime: 0,
+    setGameMetrics(prev => ({
+      ...prev,
+      totalCollectibles: collectibleCount,
+      collectiblesGathered: 0,
       pathLength: 0,
-      wrongTurns: 0,
-      backtracks: 0,
-      idleTime: 0,
-      collisions: 0,
-      correctTurns: 0,
-      optimalPathLength: newMazeSize * 2 - 2
-    });
+      collisions: 0
+    }));
   }, [currentLevel]);
 
-  // Initialize or reset level when currentLevel changes
   useEffect(() => {
     resetLevel();
   }, [currentLevel, resetLevel]);
@@ -114,55 +103,28 @@ export default function Maze2DGame({ cellSize, onComplete }: Maze2DGameProps) {
         ...prev,
         collectibles: prev.collectibles + 1
       }));
+      setGameMetrics(prev => ({
+        ...prev,
+        collectiblesGathered: prev.collectiblesGathered + 1
+      }));
     }
   }, [maze]);
 
-  const updateMetrics = useCallback((newPos: {x: number, y: number}, isCollision: boolean) => {
-    setMetrics(prev => ({
-      ...prev,
-      pathLength: prev.pathLength + 1,
-      collisions: isCollision ? prev.collisions + 1 : prev.collisions
-    }));
-  }, []);
-
-  useEffect(() => {
-    if (completionRef.current.isCompleted && onComplete) {
-      onComplete(completionRef.current.score);
-    }
-  }, [onComplete]);
-
-  const handleLevelComplete = useCallback(() => {
-    const finalMetrics = metrics;
-    const scores = calculateCognitiveScores(finalMetrics);
-    
-    const newAssessment: CognitiveAssessment = {
-      metrics: finalMetrics,
-      scores,
-      timestamp: Date.now(),
-      attempt: currentLevel
+  const handleGameComplete = useCallback(() => {
+    const endTime = Date.now();
+    const finalMetrics: Maze2DMetrics = {
+      ...gameMetrics,
+      completionTime: gameStartTime ? (endTime - gameStartTime) / 1000 : 0,
+      accuracy: (gameMetrics.correctTurns / (gameMetrics.correctTurns + gameMetrics.wrongTurns)) * 100
     };
+    
+    setGameMetrics(finalMetrics);
+    setIsGameComplete(true);
+    onComplete?.(finalMetrics);
+  }, [gameMetrics, gameStartTime, onComplete]);
 
-    setAssessments(prev => {
-      const updated = [...prev, newAssessment];
-      if (currentLevel >= 3) {
-        setShowReport(true);
-        setGameCompleted(true);
-        const totalScore = updated.reduce((sum, assessment) => 
-          sum + assessment.scores.overallScore, 0) / updated.length;
-        completionRef.current = {
-          isCompleted: true,
-          score: Math.round(totalScore)
-        };
-        return updated;
-      }
-      setShowLevelComplete(true);
-      return updated;
-    });
-  }, [currentLevel, metrics]);
-
-  // Modify movePlayer to check for all collectibles
   const movePlayer = useCallback((dx: number, dy: number) => {
-    if (!gameStarted || gameCompleted || showLevelComplete) return;
+    if (!gameStarted || isGameComplete) return;
 
     const newX = player.x + dx;
     const newY = player.y + dy;
@@ -175,34 +137,30 @@ export default function Maze2DGame({ cellSize, onComplete }: Maze2DGameProps) {
         y: newY
       }));
       checkCollectible({ x: newX, y: newY });
-      updateMetrics({ x: newX, y: newY }, false);
+      setGameMetrics(prev => ({
+        ...prev,
+        pathLength: prev.pathLength + 1,
+        correctTurns: prev.correctTurns + 1
+      }));
 
-      // Check if player reached the end point AND has all collectibles
       if (maze[newY][newX].isEnd && player.collectibles === totalCollectibles) {
-        handleLevelComplete();
-      } else if (maze[newY][newX].isEnd) {
-        // Show message that all collectibles are needed
-        console.log("Collect all items first!");
+        handleGameComplete();
       }
     } else {
-      updateMetrics({ x: player.x, y: player.y }, true);
+      setGameMetrics(prev => ({
+        ...prev,
+        collisions: prev.collisions + 1,
+        wrongTurns: prev.wrongTurns + 1
+      }));
     }
-  }, [player, gameStarted, gameCompleted, showLevelComplete, checkCollision, checkCollectible, updateMetrics, maze, handleLevelComplete, totalCollectibles]);
-
-  const startNextLevel = useCallback(() => {
-    if (currentLevel < 3) {
-      setShowLevelComplete(false);
-      setCurrentLevel(prev => prev + 1);
-    } else {
-      // Ensure report is shown for level 3
-      setShowReport(true);
-      setGameCompleted(true);
-    }
-  }, [currentLevel]);
+  }, [player, gameStarted, isGameComplete, checkCollision, checkCollectible, maze, handleGameComplete, totalCollectibles]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault();
+      if (!gameStarted) {
+        setGameStarted(true);
+        setGameStartTime(Date.now());
+      }
       
       switch (e.code) {
         case 'ArrowUp':
@@ -228,118 +186,50 @@ export default function Maze2DGame({ cellSize, onComplete }: Maze2DGameProps) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [movePlayer]);
+  }, [movePlayer, gameStarted]);
 
-  // Modify the canvas drawing code for better visuals
   useEffect(() => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    // Add a gradient background
-    const gradient = ctx.createLinearGradient(0, 0, canvasRef.current.width, canvasRef.current.height);
-    gradient.addColorStop(0, '#1a1c2c');
-    gradient.addColorStop(1, '#4a1c2c');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-
-    // Draw the maze with improved visuals
+    // Draw maze
     maze.forEach((row, y) => {
       row.forEach((cell, x) => {
         const cellX = x * cellSize;
         const cellY = y * cellSize;
 
         if (cell.isWall) {
-          // Wall with gradient
-          const wallGradient = ctx.createLinearGradient(
-            cellX, cellY,
-            cellX + cellSize, cellY + cellSize
-          );
-          wallGradient.addColorStop(0, '#2c3e50');
-          wallGradient.addColorStop(1, '#2c3e50');
-          ctx.fillStyle = wallGradient;
-          ctx.fillRect(cellX, cellY, cellSize, cellSize);
-          
-          // Add wall highlights
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-          ctx.fillRect(cellX, cellY, 2, cellSize);
-          ctx.fillRect(cellX, cellY, cellSize, 2);
+          ctx.fillStyle = '#1a1c2c';
+        } else if (cell.isStart) {
+          ctx.fillStyle = '#4a9f4a';
+        } else if (cell.isEnd) {
+          ctx.fillStyle = '#9f4a4a';
         } else {
-          // Path with subtle pattern
-          ctx.fillStyle = '#34495e';
-          ctx.fillRect(cellX, cellY, cellSize, cellSize);
-          
-          if (cell.isCollectible) {
-            // Collectible with glow effect
-            ctx.save();
-            ctx.shadowColor = '#ffd700';
-            ctx.shadowBlur = 15;
-            ctx.fillStyle = '#ffd700';
-            ctx.beginPath();
-            ctx.arc(
-              cellX + cellSize / 2,
-              cellY + cellSize / 2,
-              cellSize / 4,
-              0,
-              Math.PI * 2
-            );
-            ctx.fill();
-            
-            // Star shape
-            const spikes = 5;
-            const outerRadius = cellSize / 4;
-            const innerRadius = cellSize / 8;
-            ctx.beginPath();
-            for(let i = 0; i < spikes * 2; i++) {
-              const radius = i % 2 === 0 ? outerRadius : innerRadius;
-              const angle = (i * Math.PI) / spikes;
-              const x = cellX + cellSize / 2 + Math.cos(angle) * radius;
-              const y = cellY + cellSize / 2 + Math.sin(angle) * radius;
-              if(i === 0) ctx.moveTo(x, y);
-              else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
-            ctx.fillStyle = '#ffeb3b';
-            ctx.fill();
-            ctx.restore();
-          }
+          ctx.fillStyle = '#ffffff';
+        }
 
-          if (cell.isEnd) {
-            // Portal effect
-            ctx.save();
-            ctx.fillStyle = '#4CAF50';
-            ctx.fillRect(cellX, cellY, cellSize, cellSize);
-            
-            // Animated portal effect
-            const time = Date.now() / 1000;
-            const numRings = 3;
-            for(let i = 0; i < numRings; i++) {
-              ctx.beginPath();
-              ctx.arc(
-                cellX + cellSize / 2,
-                cellY + cellSize / 2,
-                (cellSize / 3) * (1 + Math.sin(time + i) * 0.2),
-                0,
-                Math.PI * 2
-              );
-              ctx.strokeStyle = `rgba(255, 255, 255, ${0.8 - i * 0.2})`;
-              ctx.lineWidth = 2;
-              ctx.stroke();
-            }
-            ctx.restore();
-          }
+        ctx.fillRect(cellX, cellY, cellSize, cellSize);
+
+        if (cell.isCollectible) {
+          ctx.fillStyle = '#ffd700';
+          ctx.beginPath();
+          ctx.arc(
+            cellX + cellSize / 2,
+            cellY + cellSize / 2,
+            cellSize / 4,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
         }
       });
     });
 
-    // Draw player with glow effect
-    ctx.save();
-    ctx.shadowColor = '#ff6b6b';
-    ctx.shadowBlur = 20;
-    ctx.fillStyle = '#ff6b6b';
+    // Draw player
+    ctx.fillStyle = '#4a4af0';
     ctx.beginPath();
     ctx.arc(
       player.x * cellSize + cellSize / 2,
@@ -349,98 +239,39 @@ export default function Maze2DGame({ cellSize, onComplete }: Maze2DGameProps) {
       Math.PI * 2
     );
     ctx.fill();
-    ctx.restore();
+  }, [maze, player, cellSize, canvasWidth, canvasHeight]);
 
-  }, [maze, player, cellSize]);
-
-  // Start the game when component mounts
-  useEffect(() => {
-    if (!gameStarted) {
-      setGameStarted(true);
-    }
-  }, [gameStarted]);
+  const handleGameSubmit = () => {
+    completeGame('maze-2d', gameMetrics);
+  };
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-900 to-purple-900 p-8">
-      <div className="relative">
-        <canvas
-          ref={canvasRef}
-          width={maze[0].length * cellSize}
-          height={maze.length * cellSize}
-          className="rounded-lg shadow-2xl border-4 border-purple-500/30"
-        />
-        
-        {/* Game Stats Panel */}
-        <div className="absolute -top-20 right-0 bg-white/10 backdrop-blur-md p-6 rounded-t-2xl rounded-bl-2xl border border-white/20 text-white">
-          <div className="grid grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="text-purple-300 text-sm mb-1">Level</div>
-              <div className="text-2xl font-bold">{currentLevel}/3</div>
-            </div>
-            <div className="text-center">
-              <div className="text-purple-300 text-sm mb-1">Collectibles</div>
-              <div className="text-2xl font-bold">{player.collectibles}/{totalCollectibles}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-purple-300 text-sm mb-1">Time</div>
-              <div className="text-2xl font-bold">{Math.floor((Date.now() - (gameStartTime || Date.now())) / 1000)}s</div>
-            </div>
-          </div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-blue-100 to-purple-100">
+      <h1 className="text-4xl font-bold mb-4 text-blue-800">Maze Navigator</h1>
+      
+      <div className="mb-4 text-center">
+        <div className="text-lg mb-2">
+          Collectibles: {player.collectibles}/{totalCollectibles}
         </div>
-
-        {/* Controls Guide */}
-        <div className="absolute -bottom-20 left-0 right-0 bg-white/10 backdrop-blur-md p-4 rounded-b-2xl text-white text-center">
-          <div className="text-sm text-purple-300 mb-2">Controls</div>
-          <div className="grid grid-cols-4 gap-2 justify-center items-center">
-            <div className="px-3 py-2 bg-white/5 rounded">↑</div>
-            <div className="px-3 py-2 bg-white/5 rounded">↓</div>
-            <div className="px-3 py-2 bg-white/5 rounded">←</div>
-            <div className="px-3 py-2 bg-white/5 rounded">→</div>
-          </div>
+        <div className="text-sm text-gray-600">
+          Use arrow keys or WASD to move
         </div>
       </div>
-      
-      {showLevelComplete && !showReport && currentLevel < 3 && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 text-white text-center max-w-md">
-            <div className="text-5xl mb-4">🎉</div>
-            <h2 className="text-3xl font-bold mb-6 text-purple-300">Level {currentLevel} Complete!</h2>
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="bg-white/5 p-4 rounded-xl">
-                <div className="text-purple-300 text-sm mb-1">Collectibles</div>
-                <div className="text-2xl font-bold">{player.collectibles}/{totalCollectibles}</div>
-              </div>
-              <div className="bg-white/5 p-4 rounded-xl">
-                <div className="text-purple-300 text-sm mb-1">Time</div>
-                <div className="text-2xl font-bold">{Math.floor((Date.now() - (gameStartTime || Date.now())) / 1000)}s</div>
-              </div>
-            </div>
-            <button
-              onClick={startNextLevel}
-              className="px-8 py-3 bg-purple-600 hover:bg-purple-700 rounded-xl text-lg font-semibold transition-all transform hover:scale-105 active:scale-95"
-            >
-              Next Level
-            </button>
-          </div>
-        </div>
-      )}
 
-      {(showReport || (showLevelComplete && currentLevel >= 3)) && (
-        <CognitiveReport
-          report={generateCognitiveReport(assessments)}
-          onClose={() => {
-            setShowReport(false);
-            if (!completionRef.current.isCompleted && onComplete) {
-              const totalScore = assessments.reduce((sum, assessment) => 
-                sum + assessment.scores.overallScore, 0) / assessments.length;
-              completionRef.current = {
-                isCompleted: true,
-                score: Math.round(totalScore)
-              };
-            }
-          }}
-        />
-      )}
+      <canvas
+        ref={canvasRef}
+        width={canvasWidth}
+        height={canvasHeight}
+        className="border-4 border-blue-300 rounded-lg shadow-lg bg-white"
+      />
+
+      <GameSubmission
+        isComplete={isGameComplete}
+        onSubmit={handleGameSubmit}
+        gameMetrics={gameMetrics}
+        nextGame={nextGame?.path}
+        isLastGame={isLastGame('maze-2d')}
+      />
     </div>
   );
 } 
