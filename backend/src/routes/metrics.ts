@@ -98,9 +98,30 @@ const calculateStandardDeviation = (numbers: number[]): number => {
 // Ensure cognitive data directory exists
 const ensureCognitiveDirectory = async (): Promise<void> => {
   try {
+    // Create directory if it doesn't exist
     await fs.mkdir(COGNITIVE_DATA_DIR, { recursive: true });
+    
+    // Check if memory_match.json exists
+    try {
+      await fs.access(MEMORY_MATCH_FILE);
+    } catch (error) {
+      // File doesn't exist, create it with initial structure
+      const initialData: MemoryMatchData = {
+        users: {},
+        aggregateStats: {
+          totalAssessments: 0,
+          averageScores: {
+            memory: { accuracy: 0, reactionTime: 0, span: 0, errorRate: 0 },
+            attention: { focusScore: 0, consistency: 0, deliberationTime: 0 },
+            processing: { cognitiveLoad: 0, processingSpeed: 0, efficiency: 0 },
+            overall: { performanceScore: 0, confidenceLevel: 0, percentileRank: 0 }
+          }
+        }
+      };
+      await fs.writeFile(MEMORY_MATCH_FILE, JSON.stringify(initialData, null, 2));
+    }
   } catch (error) {
-    console.error('Error creating cognitive data directory:', error);
+    console.error('Error ensuring cognitive data structure:', error);
     throw error;
   }
 };
@@ -142,7 +163,17 @@ const readMemoryMatchData = async (): Promise<MemoryMatchData> => {
 const writeMemoryMatchData = async (data: MemoryMatchData): Promise<void> => {
   try {
     await ensureCognitiveDirectory();
-    await fs.writeFile(MEMORY_MATCH_FILE, JSON.stringify(data, null, 2));
+    // Use synchronous write to ensure immediate data persistence
+    await fs.writeFile(
+      MEMORY_MATCH_FILE,
+      JSON.stringify(data, null, 2),
+      { encoding: 'utf8', flag: 'w' }
+    );
+    // Verify the write was successful
+    const written = await fs.readFile(MEMORY_MATCH_FILE, 'utf8');
+    if (!written) {
+      throw new Error('Failed to verify written data');
+    }
   } catch (error) {
     console.error('Error writing memory match data:', error);
     throw error;
@@ -215,108 +246,157 @@ const validateMetrics = (metrics: unknown): metrics is CognitiveMetrics => {
 };
 
 // Store Memory Match metrics
-router.post('/api/store-memory-match-data', async (req, res) => {
+router.post('/metrics/memory-match', async (req, res) => {
   try {
+    console.log('Received memory match metrics request');
+    console.log('Request headers:', req.headers);
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+
     const { userId, metrics } = req.body;
 
+    // Validate required fields
     if (!userId || !metrics) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      console.error('Missing required fields:', { userId: !!userId, metrics: !!metrics });
+      return res.status(400).json({
+        error: 'Missing required fields',
+        details: {
+          userId: !!userId,
+          metrics: !!metrics
+        }
+      });
     }
 
     // Validate metrics structure
     if (!validateMetrics(metrics)) {
-      return res.status(400).json({ error: 'Invalid metrics format' });
+      console.error('Invalid metrics format:', metrics);
+      return res.status(400).json({
+        error: 'Invalid metrics format',
+        details: {
+          hasMemory: !!metrics.memory,
+          hasAttention: !!metrics.attention,
+          hasProcessing: !!metrics.processing,
+          hasOverall: !!metrics.overall,
+          metrics: metrics
+        }
+      });
     }
 
-    const data = await readMemoryMatchData();
-    
-    // Initialize user data if not exists
-    if (!data.users[userId]) {
-      data.users[userId] = {
-        assessments: [],
-        cognitiveProfile: {
-          memory: { baseline: null, trend: [] },
-          attention: { baseline: null, trend: [] },
-          processing: { baseline: null, trend: [] },
-          overall: { baseline: null, trend: [] }
+    // Ensure directory exists
+    try {
+      await fs.mkdir(COGNITIVE_DATA_DIR, { recursive: true });
+      console.log('Cognitive data directory ensured:', COGNITIVE_DATA_DIR);
+    } catch (error) {
+      console.error('Error creating directory:', error);
+      throw error;
+    }
+
+    // Initialize data structure if file doesn't exist
+    let data: MemoryMatchData;
+    try {
+      try {
+        const fileContent = await fs.readFile(MEMORY_MATCH_FILE, 'utf8');
+        data = JSON.parse(fileContent);
+        console.log('Existing data loaded');
+      } catch (error) {
+        console.log('No existing file, creating new data structure');
+        data = {
+          users: {},
+          aggregateStats: {
+            totalAssessments: 0,
+            averageScores: {
+              memory: { accuracy: 0, reactionTime: 0, span: 0, errorRate: 0 },
+              attention: { focusScore: 0, consistency: 0, deliberationTime: 0 },
+              processing: { cognitiveLoad: 0, processingSpeed: 0, efficiency: 0 },
+              overall: { performanceScore: 0, confidenceLevel: 0, percentileRank: 0 }
+            }
+          }
+        };
+      }
+
+      // Initialize user data if not exists
+      if (!data.users[userId]) {
+        console.log('Initializing new user:', userId);
+        data.users[userId] = {
+          assessments: [],
+          cognitiveProfile: {
+            memory: { baseline: null, trend: [] },
+            attention: { baseline: null, trend: [] },
+            processing: { baseline: null, trend: [] },
+            overall: { baseline: null, trend: [] }
+          }
+        };
+      }
+
+      // Create assessment
+      const assessment: Assessment = {
+        timestamp: Date.now(),
+        metrics,
+        sessionId: `mm_${userId}_${Date.now()}`,
+        environmentFactors: {
+          timeOfDay: new Date().getHours(),
+          dayOfWeek: new Date().getDay(),
+          completionTime: metrics.memory.reactionTime * metrics.memory.span
         }
       };
-    }
 
-    const timestamp = Date.now();
-    const assessment: Assessment = {
-      timestamp,
-      metrics,
-      sessionId: `mm_${userId}_${timestamp}`,
-      environmentFactors: {
-        timeOfDay: new Date().getHours(),
-        dayOfWeek: new Date().getDay(),
-        completionTime: metrics.memory.reactionTime * metrics.memory.span
+      // Update user data
+      data.users[userId].assessments.push(assessment);
+      
+      // Update baseline if first assessment
+      if (!data.users[userId].cognitiveProfile.memory.baseline) {
+        Object.keys(data.users[userId].cognitiveProfile).forEach(category => {
+          if (isMetricCategory(category)) {
+            data.users[userId].cognitiveProfile[category].baseline = metrics;
+          }
+        });
       }
-    };
 
-    // Update user's cognitive profile
-    const userProfile = data.users[userId];
-    userProfile.assessments.push(assessment);
-
-    // Update baseline if first assessment
-    if (!userProfile.cognitiveProfile.memory.baseline) {
-      userProfile.cognitiveProfile.memory.baseline = metrics;
-      userProfile.cognitiveProfile.attention.baseline = metrics;
-      userProfile.cognitiveProfile.processing.baseline = metrics;
-      userProfile.cognitiveProfile.overall.baseline = metrics;
-    }
-
-    // Update trends
-    Object.entries(metrics).forEach(([category, categoryMetrics]) => {
-      if (isMetricCategory(category)) {
-        if (category === 'memory' && isMemoryMetrics(categoryMetrics)) {
-          Object.entries(categoryMetrics).forEach(([metric, value]) => {
-            const avgMetrics = data.aggregateStats.averageScores.memory;
-            avgMetrics[metric as keyof MetricValue] = 
-              (avgMetrics[metric as keyof MetricValue] * (data.aggregateStats.totalAssessments - 1) + value) / data.aggregateStats.totalAssessments;
-          });
-        } else if (category === 'attention' && isAttentionMetrics(categoryMetrics)) {
-          Object.entries(categoryMetrics).forEach(([metric, value]) => {
-            const avgMetrics = data.aggregateStats.averageScores.attention;
-            avgMetrics[metric as keyof AttentionMetrics] = 
-              (avgMetrics[metric as keyof AttentionMetrics] * (data.aggregateStats.totalAssessments - 1) + value) / data.aggregateStats.totalAssessments;
-          });
-        } else if (category === 'processing' && isProcessingMetrics(categoryMetrics)) {
-          Object.entries(categoryMetrics).forEach(([metric, value]) => {
-            const avgMetrics = data.aggregateStats.averageScores.processing;
-            avgMetrics[metric as keyof ProcessingMetrics] = 
-              (avgMetrics[metric as keyof ProcessingMetrics] * (data.aggregateStats.totalAssessments - 1) + value) / data.aggregateStats.totalAssessments;
-          });
-        } else if (category === 'overall' && isOverallMetrics(categoryMetrics)) {
-          Object.entries(categoryMetrics).forEach(([metric, value]) => {
-            const avgMetrics = data.aggregateStats.averageScores.overall;
-            avgMetrics[metric as keyof OverallMetrics] = 
-              (avgMetrics[metric as keyof OverallMetrics] * (data.aggregateStats.totalAssessments - 1) + value) / data.aggregateStats.totalAssessments;
+      // Update trends
+      Object.entries(metrics).forEach(([category, categoryMetrics]) => {
+        if (isMetricCategory(category)) {
+          data.users[userId].cognitiveProfile[category].trend.push({
+            timestamp: Date.now(),
+            metrics: categoryMetrics
           });
         }
+      });
+
+      // Update aggregate stats
+      data.aggregateStats.totalAssessments++;
+
+      // Write data
+      console.log('Writing data to file:', MEMORY_MATCH_FILE);
+      await fs.writeFile(MEMORY_MATCH_FILE, JSON.stringify(data, null, 2));
+
+      // Verify write
+      const verifyContent = await fs.readFile(MEMORY_MATCH_FILE, 'utf8');
+      const verifyData = JSON.parse(verifyContent);
+      
+      if (!verifyData.users[userId]?.assessments.find((a: Assessment) => a.sessionId === assessment.sessionId)) {
+        throw new Error('Data verification failed - assessment not found after write');
       }
-    });
 
-    // Update aggregate stats
-    data.aggregateStats.totalAssessments++;
-    const totalAssessments = data.aggregateStats.totalAssessments;
-
-    await writeMemoryMatchData(data);
-
-    res.status(200).json({ 
-      message: 'Cognitive assessment stored successfully',
-      assessmentId: assessment.sessionId,
-      cognitiveProfile: userProfile.cognitiveProfile
-    });
+      console.log('Data successfully written and verified');
+      res.json({ 
+        message: 'Memory match metrics stored successfully',
+        assessmentId: assessment.sessionId
+      });
+    } catch (error) {
+      console.error('Error handling data:', error);
+      throw error;
+    }
   } catch (error) {
-    console.error('Error storing cognitive assessment:', error);
-    res.status(500).json({ error: 'Failed to store cognitive assessment' });
+    console.error('Error storing memory match metrics:', error);
+    res.status(500).json({
+      error: 'Failed to store memory match metrics',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
   }
 });
 
 // Get Memory Match cognitive profile
-router.get('/api/memory-match-profile/:userId', async (req, res) => {
+router.get('/metrics/memory-match/profile/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const data = await readMemoryMatchData();
@@ -400,5 +480,115 @@ const calculatePercentileRanking = (userProfile: UserProfile, aggregateStats: Ag
 
   return rankings;
 };
+
+// Test endpoint to write sample data
+router.post('/metrics/memory-match/test-data', async (req, res) => {
+  try {
+    const testData: MemoryMatchData = {
+      users: {
+        "test_user_123": {
+          assessments: [{
+            timestamp: Date.now(),
+            metrics: {
+              memory: {
+                accuracy: 85.5,
+                reactionTime: 1.2,
+                span: 8,
+                errorRate: 14.5
+              },
+              attention: {
+                focusScore: 92.0,
+                consistency: 88.5,
+                deliberationTime: 0.8
+              },
+              processing: {
+                cognitiveLoad: 65.5,
+                processingSpeed: 4.2,
+                efficiency: 78.9
+              },
+              overall: {
+                performanceScore: 82.5,
+                confidenceLevel: 90.0,
+                percentileRank: 75
+              }
+            },
+            sessionId: `test_session_${Date.now()}`,
+            environmentFactors: {
+              timeOfDay: new Date().getHours(),
+              dayOfWeek: new Date().getDay(),
+              completionTime: 45.2
+            }
+          }],
+          cognitiveProfile: {
+            memory: {
+              baseline: null,
+              trend: [{
+                timestamp: Date.now(),
+                metrics: { accuracy: 85.5, reactionTime: 1.2, span: 8, errorRate: 14.5 }
+              }]
+            },
+            attention: {
+              baseline: null,
+              trend: [{
+                timestamp: Date.now(),
+                metrics: { focusScore: 92.0, consistency: 88.5, deliberationTime: 0.8 }
+              }]
+            },
+            processing: {
+              baseline: null,
+              trend: [{
+                timestamp: Date.now(),
+                metrics: { cognitiveLoad: 65.5, processingSpeed: 4.2, efficiency: 78.9 }
+              }]
+            },
+            overall: {
+              baseline: null,
+              trend: [{
+                timestamp: Date.now(),
+                metrics: { performanceScore: 82.5, confidenceLevel: 90.0, percentileRank: 75 }
+              }]
+            }
+          }
+        }
+      },
+      aggregateStats: {
+        totalAssessments: 1,
+        averageScores: {
+          memory: { accuracy: 85.5, reactionTime: 1.2, span: 8, errorRate: 14.5 },
+          attention: { focusScore: 92.0, consistency: 88.5, deliberationTime: 0.8 },
+          processing: { cognitiveLoad: 65.5, processingSpeed: 4.2, efficiency: 78.9 },
+          overall: { performanceScore: 82.5, confidenceLevel: 90.0, percentileRank: 75 }
+        }
+      }
+    };
+
+    await writeMemoryMatchData(testData);
+    
+    // Verify the write was successful
+    const verifyData = await readMemoryMatchData();
+    if (!verifyData.users["test_user_123"]) {
+      throw new Error('Failed to verify written test data');
+    }
+
+    res.status(200).json({ 
+      message: 'Test data written successfully',
+      data: testData
+    });
+  } catch (error) {
+    console.error('Error writing test data:', error);
+    res.status(500).json({ error: 'Failed to write test data' });
+  }
+});
+
+// Simple test endpoint
+router.post('/test', async (req, res) => {
+  try {
+    console.log('Test endpoint hit:', req.body);
+    res.status(200).json({ message: 'Test successful', received: req.body });
+  } catch (error) {
+    console.error('Test endpoint error:', error);
+    res.status(500).json({ error: 'Test failed' });
+  }
+});
 
 export default router; 
