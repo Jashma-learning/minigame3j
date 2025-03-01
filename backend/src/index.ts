@@ -15,9 +15,9 @@ const gameDataService = new GameDataService();
 
 // CORS configuration
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://127.0.0.1:3000'],
+  origin: true, // Allow all origins in development
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
   credentials: true
 };
 
@@ -40,7 +40,11 @@ interface StoreUserDataBody {
 
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Mount metrics router first
+app.use('/api', metricsRouter);
 
 // Root route
 app.get('/', (_req, res) => {
@@ -49,7 +53,6 @@ app.get('/', (_req, res) => {
 
 // API routes
 app.use('/api', router);
-app.use('/api', metricsRouter);
 
 // Store user data
 router.post('/user-data', async (req, res) => {

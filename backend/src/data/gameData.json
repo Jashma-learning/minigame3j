@@ -28,8 +28,61 @@
       "playTime": "15-30min"
     }
   },
-  "cognitiveProfiles": {},
+  "cognitiveProfiles": {
+    "user_123": {
+      "userId": "user_123",
+      "strengths": [
+        "attention_deliberation",
+        "memory_accuracy",
+        "overall_confidence"
+      ],
+      "areas_for_improvement": [
+        "overall_performance",
+        "overall_percentile",
+        "memory_error_rate"
+      ],
+      "recommended_games": [],
+      "difficulty_levels": {
+        "memory_accuracy": "hard",
+        "memory_reaction_time": "easy",
+        "memory_span": "easy",
+        "memory_error_rate": "easy",
+        "attention_focus": "easy",
+        "attention_consistency": "easy",
+        "attention_deliberation": "hard",
+        "processing_load": "easy",
+        "processing_speed": "easy",
+        "processing_efficiency": "easy",
+        "overall_performance": "easy",
+        "overall_confidence": "hard",
+        "overall_percentile": "easy"
+      }
+    }
+  },
   "userData": {},
-  "gameScores": [],
-  "gameProgress": {}
+  "gameScores": [
+    {
+      "userId": "user_123",
+      "gameId": "memory-match",
+      "score": 0,
+      "timestamp": 1740804843614,
+      "difficulty": "medium"
+    },
+    {
+      "userId": "user_123",
+      "gameId": "memory-match",
+      "score": 0,
+      "timestamp": 1740805026017,
+      "difficulty": "medium"
+    }
+  ],
+  "gameProgress": {
+    "user_123": {
+      "memory-match": {
+        "level": 1,
+        "completed": true,
+        "score": 0
+      }
+    }
+  }
 }

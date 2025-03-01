@@ -99,6 +99,12 @@ const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onComplete }) => {
     const firstCard = cards.find(c => c.id === first)!;
     const secondCard = cards.find(c => c.id === second)!;
     
+    // Record match attempt time
+    const attemptStartTime = Math.min(
+      gameState.viewTimestamps[first] || Date.now(),
+      gameState.viewTimestamps[second] || Date.now()
+    );
+    
     setTimeout(() => {
       setGameState(prev => ({
         ...prev,
@@ -110,21 +116,18 @@ const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onComplete }) => {
         soundEffect?.playMatch();
         
         // Calculate match time
-        const matchTime = calculateMatchTime(
-          Math.min(gameState.viewTimestamps[first], gameState.viewTimestamps[second]),
-          Date.now()
-        );
+        const matchTime = calculateMatchTime(attemptStartTime, Date.now());
 
         // Update game state
         setGameState(prev => ({
           ...prev,
-          matchedPairs: [...prev.matchedPairs, ...currentPair],
+          matchedPairs: [...prev.matchedPairs, first, second],
           matchTimes: [...prev.matchTimes, matchTime]
         }));
 
         // Update cards
         setCards(prev => prev.map(card => 
-          currentPair.includes(card.id) ? { ...card, isMatched: true } : card
+          currentPair.includes(card.id) ? { ...card, isMatched: true, isFlipped: true } : card
         ));
 
         // Check if game is complete
@@ -142,43 +145,149 @@ const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onComplete }) => {
     }, 1000);
   };
 
-  const endGame = () => {
-    setGameStarted(false);
-    setIsGameComplete(true);
+  const endGame = async () => {
+    try {
+      setGameStarted(false);
+      setIsGameComplete(true);
 
-    // Calculate final metrics
-    const metrics = calculateMemoryMatchMetrics(gameState);
-    
-    // Send metrics to parent
-    onComplete?.(metrics);
-
-    // Complete game in progress context
-    completeGame('memory-match', metrics.memory.accuracy);
-
-    // Send metrics to backend
-    fetch('/api/metrics/memory-match', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: 'user_123', // Replace with actual user ID
-        metrics: metrics,
-        cognitiveMetrics: {
-          memory_accuracy: metrics.memory.accuracy,
-          memory_reaction_time: metrics.memory.reactionTime,
-          memory_span: metrics.memory.span,
-          memory_error_rate: metrics.memory.errorRate,
-          attention_focus: metrics.attention.focusScore,
-          attention_consistency: metrics.attention.consistency,
-          attention_deliberation: metrics.attention.deliberationTime,
-          processing_load: metrics.processing.cognitiveLoad,
-          processing_speed: metrics.processing.processingSpeed,
-          processing_efficiency: metrics.processing.efficiency,
-          overall_performance: metrics.overall.performanceScore,
-          overall_confidence: metrics.overall.confidenceLevel,
-          overall_percentile: metrics.overall.percentileRank
+      // Calculate final metrics
+      const metrics = calculateMemoryMatchMetrics(gameState);
+      
+      // Log detailed metrics for debugging
+      console.log('Calculated metrics:', {
+        gameState,
+        metrics,
+        memory: {
+          accuracy: Math.max(0, Math.min(100, metrics.memory.accuracy)),
+          reactionTime: Math.max(0, metrics.memory.reactionTime),
+          span: metrics.memory.span,
+          errorRate: Math.max(0, Math.min(100, metrics.memory.errorRate))
+        },
+        attention: {
+          focusScore: Math.max(0, Math.min(100, metrics.attention.focusScore)),
+          consistency: Math.max(0, Math.min(100, metrics.attention.consistency)),
+          deliberationTime: Math.max(0, metrics.attention.deliberationTime)
+        },
+        processing: {
+          cognitiveLoad: Math.max(0, Math.min(100, metrics.processing.cognitiveLoad)),
+          processingSpeed: Math.max(0, metrics.processing.processingSpeed),
+          efficiency: Math.max(0, Math.min(100, metrics.processing.efficiency))
+        },
+        overall: {
+          performanceScore: Math.max(0, Math.min(100, metrics.overall.performanceScore)),
+          confidenceLevel: Math.max(0, Math.min(100, metrics.overall.confidenceLevel)),
+          percentileRank: Math.max(0, Math.min(100, metrics.overall.percentileRank))
         }
-      }),
-    }).catch(console.error);
+      });
+      
+      // Validate metrics before sending
+      if (isNaN(metrics.memory.accuracy) || 
+          isNaN(metrics.memory.reactionTime) ||
+          isNaN(metrics.attention.focusScore) ||
+          isNaN(metrics.processing.efficiency)) {
+        throw new Error('Invalid metrics calculated');
+      }
+
+      // Send metrics to parent
+      onComplete?.(metrics);
+
+      // Complete game in progress context
+      completeGame('memory-match', metrics.memory.accuracy);
+
+      console.log('Starting endGame process...');
+
+      // First test basic connectivity
+      const testResponse = await fetch('http://localhost:3001/api/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ test: true })
+      });
+
+      if (!testResponse.ok) {
+        throw new Error(`Test request failed: ${testResponse.statusText}`);
+      }
+
+      console.log('Test endpoint successful, proceeding with metrics');
+
+      // Now send the actual metrics
+      console.log('Sending metrics to backend...');
+      try {
+        const response = await fetch('http://localhost:3001/api/metrics/memory-match', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: 'test_user_123',
+            metrics: {
+              memory: {
+                accuracy: Math.max(0, Math.min(100, metrics.memory.accuracy)),
+                reactionTime: Math.max(0, metrics.memory.reactionTime),
+                span: metrics.memory.span,
+                errorRate: Math.max(0, Math.min(100, metrics.memory.errorRate))
+              },
+              attention: {
+                focusScore: Math.max(0, Math.min(100, metrics.attention.focusScore)),
+                consistency: Math.max(0, Math.min(100, metrics.attention.consistency)),
+                deliberationTime: Math.max(0, metrics.attention.deliberationTime)
+              },
+              processing: {
+                cognitiveLoad: Math.max(0, Math.min(100, metrics.processing.cognitiveLoad)),
+                processingSpeed: Math.max(0, metrics.processing.processingSpeed),
+                efficiency: Math.max(0, Math.min(100, metrics.processing.efficiency))
+              },
+              overall: {
+                performanceScore: Math.max(0, Math.min(100, metrics.overall.performanceScore)),
+                confidenceLevel: Math.max(0, Math.min(100, metrics.overall.confidenceLevel)),
+                percentileRank: Math.max(0, Math.min(100, metrics.overall.percentileRank))
+              }
+            }
+          })
+        });
+
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+
+        if (!response.ok) {
+          let errorData = {};
+          try {
+            errorData = responseText ? JSON.parse(responseText) : {};
+          } catch (e) {
+            console.error('Failed to parse error response:', e);
+          }
+          
+          console.error('Failed to store metrics:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData,
+            responseText
+          });
+          
+          throw new Error(`Failed to store metrics: ${response.status} ${response.statusText}`);
+        }
+
+        let result = {};
+        try {
+          result = responseText ? JSON.parse(responseText) : {};
+        } catch (e) {
+          console.error('Failed to parse success response:', e);
+        }
+
+        console.log('Metrics stored successfully:', result);
+
+      } catch (error) {
+        console.error('Network or parsing error:', error);
+        throw error;
+      }
+
+    } catch (error) {
+      console.error('Error storing metrics:', error);
+      alert('Failed to store game metrics. Please try again.');
+    }
   };
 
   return (
@@ -192,7 +301,7 @@ const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onComplete }) => {
             <div className="flex flex-wrap justify-center gap-2 mb-2">
               <div className="px-3 py-1 bg-blue-100 rounded text-blue-900 text-sm">
                 Attempts: {gameState.attempts}
-              </div>
+                </div>
               <div className="px-3 py-1 bg-green-100 rounded text-green-900 text-sm">
                 Matches: {gameState.matchedPairs.length / 2}
               </div>
@@ -217,18 +326,18 @@ const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onComplete }) => {
 
           {/* Controls */}
           {!isGameComplete && (
-            <button
-              className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
-              onClick={initializeGame}
-            >
-              New Game
-            </button>
+              <button
+                className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
+                onClick={initializeGame}
+              >
+                New Game
+              </button>
           )}
 
           {/* Game Complete Message */}
           {isGameComplete && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-4 rounded-lg text-center">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-4 rounded-lg text-center">
                 <h2 className="text-xl font-bold mb-2">Cognitive Assessment Complete</h2>
                 <div className="space-y-2 mb-4">
                   {/* Memory Metrics */}
@@ -270,13 +379,13 @@ const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onComplete }) => {
                     <p className="text-sm">
                       Score: {Math.round(calculateMemoryMatchMetrics(gameState).overall.performanceScore)}%
                     </p>
-                  </div>
-                </div>
+            </div>
+          </div>
                 <p className="text-sm text-gray-600 mt-2">Moving to next assessment...</p>
               </div>
             </div>
           )}
-        </div>
+          </div>
       </div>
     </div>
   );
