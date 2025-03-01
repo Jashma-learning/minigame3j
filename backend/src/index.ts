@@ -1,37 +1,96 @@
-import express, { Request, Response, Router } from 'express';
+import express, { Request, Response, RequestHandler } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { GameDataService } from './services/gameDataService';
-import { GameSession } from './types/gameData';
+import { GameSession, GameMetrics, UserData } from './types/gameData';
+import metricsRouter from './routes/metrics';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const router = Router();
+const router = express.Router();
 const port = process.env.PORT || 3001;
 const gameDataService = new GameDataService();
 
+// CORS configuration
+const corsOptions = {
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://127.0.0.1:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+// Custom types for request parameters
+interface MetricsRequestParams {
+  gameId: string;
+  userId?: string;
+}
+
+interface MetricsRequestBody {
+  userId: string;
+  metrics: GameMetrics;
+  cognitiveMetrics: Record<string, number>;
+}
+
+interface StoreUserDataBody {
+  userId: string;
+  userData: Omit<UserData, 'createdAt' | 'lastUpdated'>;
+}
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// Basic route
-router.get('/', (req: Request, res: Response) => {
-  res.json({ message: 'Welcome to the Cognitive Assessment Games API' });
+// Root route
+app.get('/', (_req, res) => {
+  res.json({ message: 'Cognitive Assessment Games API is running' });
+});
+
+// API routes
+app.use('/api', router);
+app.use('/api', metricsRouter);
+
+// Store user data
+router.post('/user-data', async (req, res) => {
+  try {
+    const userData: UserData = req.body.userData;
+    const userId = await gameDataService.storeUserData(userData);
+    res.json({ success: true, userId });
+  } catch (error) {
+    console.error('Error storing user data:', error);
+    res.status(500).json({ success: false, error: 'Failed to store user data' });
+  }
+});
+
+// Get user profile
+router.get('/user-profile/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const userProfile = await gameDataService.getUserProfile(userId);
+    if (!userProfile) {
+      res.status(404).json({ success: false, error: 'User not found' });
+      return;
+    }
+    res.json({ success: true, data: userProfile });
+  } catch (error) {
+    console.error('Error retrieving user profile:', error);
+    res.status(500).json({ success: false, error: 'Failed to retrieve user profile' });
+  }
 });
 
 // Store game metrics
-router.post('/api/metrics/:gameId', (req: Request, res: Response) => {
+router.post('/metrics/:gameId', async (req, res) => {
   try {
     const { gameId } = req.params;
-    const { userId, metrics } = req.body;
+    const { userId, metrics, cognitiveMetrics } = req.body;
 
     if (!userId || !metrics) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
-        message: 'Missing required fields: userId and metrics'
+        error: 'Missing required fields: userId and metrics'
       });
+      return;
     }
 
     const gameSession: GameSession = {
@@ -40,7 +99,7 @@ router.post('/api/metrics/:gameId', (req: Request, res: Response) => {
       metrics
     };
 
-    gameDataService.storeGameSession(userId, gameSession);
+    await gameDataService.storeGameSession(userId, gameSession, cognitiveMetrics);
 
     res.json({
       success: true,
@@ -51,68 +110,114 @@ router.post('/api/metrics/:gameId', (req: Request, res: Response) => {
     console.error('Error storing metrics:', error);
     res.status(500).json({
       success: false,
-      message: 'Error storing metrics'
+      error: 'Failed to store metrics'
     });
   }
 });
 
 // Get user's game metrics
-router.get('/api/metrics/:userId/:gameId?', (req: Request, res: Response) => {
+router.get('/metrics/:userId/:gameId?', async (req, res) => {
   try {
     const { userId, gameId } = req.params;
     
+    if (!userId) {
+      res.status(400).json({
+        success: false,
+        error: 'Missing required parameter: userId'
+      });
+      return;
+    }
+
     let data;
     if (gameId) {
-      data = gameDataService.getGameData(userId, gameId);
+      data = await gameDataService.getGameSpecificData(userId, gameId);
     } else {
-      data = gameDataService.getUserData(userId);
+      data = await gameDataService.getUserGameData(userId);
     }
 
     if (!data) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
-        message: 'No data found'
+        error: 'No data found'
       });
+      return;
     }
 
     res.json({
       success: true,
-      message: gameId 
-        ? `Retrieved metrics for game ${gameId}`
-        : `Retrieved all metrics for user`,
       data
     });
   } catch (error) {
     console.error('Error retrieving metrics:', error);
     res.status(500).json({
       success: false,
-      message: 'Error retrieving metrics'
+      error: 'Failed to retrieve metrics'
+    });
+  }
+});
+
+// Get user's cognitive profile
+router.get('/cognitive-profile/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const profile = await gameDataService.getCognitiveProfile(userId);
+
+    if (!profile) {
+      res.status(404).json({
+        success: false,
+        error: 'No cognitive profile found'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: profile
+    });
+  } catch (error) {
+    console.error('Error retrieving cognitive profile:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve cognitive profile'
     });
   }
 });
 
 // Get all users
-router.get('/api/users', (req: Request, res: Response) => {
+router.get('/users', async (_req, res) => {
   try {
-    const users = gameDataService.getAllUsers();
+    const users = await gameDataService.getAllUsers();
     res.json({
       success: true,
-      message: 'Retrieved all users',
       data: users
     });
   } catch (error) {
     console.error('Error retrieving users:', error);
     res.status(500).json({
       success: false,
-      message: 'Error retrieving users'
+      error: 'Failed to retrieve users'
     });
   }
 });
 
-// Use router
-app.use(router);
+// Error handling middleware
+app.use((err: Error, req: Request, res: Response, next: any) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    success: false,
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+  });
+});
+
+// Handle 404
+app.use((_req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Route not found'
+  });
+});
 
 // Start server
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 }); 

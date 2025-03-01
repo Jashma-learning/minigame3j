@@ -31,7 +31,7 @@ interface StroopChallengeGameProps {
 
 const StroopChallengeGame: React.FC<StroopChallengeGameProps> = ({ onComplete }) => {
   const [gameConfig, setGameConfig] = useState<GameConfig>({
-    responseTimeLimit: 3000, // Start with 3 seconds
+    responseTimeLimit: 3000,
     showDistractions: false,
     roundsToWin: 10
   });
@@ -155,113 +155,143 @@ const StroopChallengeGame: React.FC<StroopChallengeGameProps> = ({ onComplete })
   }, [timeLeft, round, gameConfig.roundsToWin, startNewRound]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-4 text-white">Stroop Challenge</h1>
-        <div className="flex gap-4 justify-center mb-4">
-          <div className="px-4 py-2 bg-purple-700 rounded-lg">
+    <div className="h-screen bg-gradient-to-b from-gray-900 to-gray-800 py-2">
+      {/* Game Header */}
+      <div className="text-center mb-2">
+        <h1 className="text-2xl font-bold text-white mb-0.5">Stroop Challenge</h1>
+        <p className="text-gray-400 text-sm mb-1">Color-word interference challenge</p>
+        <div className="flex justify-center gap-2">
+          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
+            Duration: 6-8 min
+          </span>
+          <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs">
+            Difficulty: Medium
+          </span>
+        </div>
+      </div>
+
+      {/* Game Content */}
+      <div className="max-w-xl mx-auto px-3">
+        {/* Game Stats */}
+        <div className="flex gap-2 justify-center mb-2">
+          <div className="px-2 py-0.5 bg-purple-900/50 backdrop-blur-sm rounded-full text-purple-100 text-sm font-medium">
             Score: {score}
           </div>
-          <div className="px-4 py-2 bg-purple-700 rounded-lg">
+          <div className="px-2 py-0.5 bg-purple-900/50 backdrop-blur-sm rounded-full text-purple-100 text-sm font-medium">
             Round: {round + 1}/{gameConfig.roundsToWin}
           </div>
-          <div className="px-4 py-2 bg-purple-700 rounded-lg">
+          <div className="px-2 py-0.5 bg-purple-900/50 backdrop-blur-sm rounded-full text-purple-100 text-sm font-medium">
             Streak: {streak}
           </div>
         </div>
-      </div>
 
-      {!gameStarted ? (
-        <button
-          onClick={startGame}
-          className="px-6 py-3 bg-green-500 text-white rounded-lg text-xl hover:bg-green-600 transition-colors"
-        >
-          Start Game
-        </button>
-      ) : (
-        <div className="relative w-full max-w-2xl aspect-video bg-gray-800 rounded-xl overflow-hidden">
-          {/* Progress bar */}
-          <div className="absolute top-0 left-0 w-full h-2 bg-gray-700">
-            <motion.div
-              className="h-full bg-blue-500"
-              initial={{ width: '100%' }}
-              animate={{ width: '0%' }}
-              transition={{ duration: gameConfig.responseTimeLimit / 1000, ease: 'linear' }}
-            />
+        {!gameStarted ? (
+          <div className="h-[50vh] flex flex-col items-center justify-center gap-3 bg-gray-800/50 rounded-lg border border-purple-500/20 backdrop-blur-sm p-4">
+            <div className="text-center">
+              <h2 className="text-lg font-bold mb-1 text-white">How to Play</h2>
+              <p className="text-gray-300 text-sm mb-0.5">Match the word's meaning, not its color!</p>
+              <p className="text-sm text-gray-400">Example: If you see "Red" written in blue, click the red button.</p>
+            </div>
+            <button
+              onClick={startGame}
+              className="px-5 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-base font-semibold 
+                       hover:from-purple-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-200 
+                       shadow-lg hover:shadow-xl"
+            >
+              Start Game
+            </button>
           </div>
-
-          {/* Distractions */}
-          <AnimatePresence>
-            {gameConfig.showDistractions && distractions.map((d, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-8 h-8 rounded-full opacity-20"
-                style={{ 
-                  backgroundColor: d.color,
-                  left: `${d.x}%`,
-                  top: `${d.y}%`
-                }}
-                initial={{ scale: 0 }}
-                animate={{ scale: [1, 1.5, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            ))}
-          </AnimatePresence>
-
-          {/* Main word display */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              {currentWord && (
+        ) : (
+          <div className="flex flex-col gap-2">
+            {/* Game Container */}
+            <div className="relative aspect-[16/9] w-full bg-gray-800/90 rounded-lg overflow-hidden 
+                          shadow-lg border border-purple-500/20">
+              {/* Progress bar */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gray-700/50">
                 <motion.div
-                  key={currentWord.text + currentWord.displayColor}
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.5, opacity: 0 }}
-                  className="text-6xl font-bold"
-                  style={{ color: currentWord.displayColor }}
-                >
-                  {currentWord.text}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                  initial={{ width: '100%' }}
+                  animate={{ width: '0%' }}
+                  transition={{ duration: gameConfig.responseTimeLimit / 1000, ease: 'linear' }}
+                />
+              </div>
+
+              {/* Distractions */}
+              <AnimatePresence>
+                {gameConfig.showDistractions && distractions.map((d, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-5 h-5 rounded-full opacity-20 blur-sm"
+                    style={{ 
+                      backgroundColor: d.color,
+                      left: `${d.x}%`,
+                      top: `${d.y}%`
+                    }}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: [1, 1.5, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                ))}
+              </AnimatePresence>
+
+              {/* Main word display */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <AnimatePresence mode="wait">
+                  {currentWord && (
+                    <motion.div
+                      key={currentWord.text + currentWord.displayColor}
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.5, opacity: 0 }}
+                      className="text-5xl font-bold tracking-wider"
+                      style={{ color: currentWord.displayColor }}
+                    >
+                      {currentWord.text}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Result overlay */}
+              <AnimatePresence>
+                {showResult && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className={`absolute inset-0 flex items-center justify-center backdrop-blur-sm
+                      ${showResult === 'correct' 
+                        ? 'bg-green-500/30' 
+                        : 'bg-red-500/30'}`}
+                  >
+                    <span className="text-4xl">
+                      {showResult === 'correct' ? '✓' : '✗'}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Color buttons */}
+            <div className="grid grid-cols-5 gap-1.5">
+              {Object.entries(COLORS).map(([name, color]) => (
+                <button
+                  key={name}
+                  onClick={() => handleColorClick(color)}
+                  disabled={!gameStarted || showResult !== null}
+                  className={`
+                    aspect-square rounded-lg shadow-md transform hover:scale-105 
+                    transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
+                    border border-white/20 hover:border-white/30
+                    ${showResult === null ? 'hover:shadow-lg hover:-translate-y-0.5' : ''}
+                  `}
+                  style={{ backgroundColor: color }}
+                  aria-label={`Select ${name} color`}
+                />
+              ))}
+            </div>
           </div>
-
-          {/* Result overlay */}
-          <AnimatePresence>
-            {showResult && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className={`absolute inset-0 flex items-center justify-center bg-opacity-50 ${
-                  showResult === 'correct' ? 'bg-green-500' : 'bg-red-500'
-                }`}
-              >
-                <span className="text-4xl font-bold text-white">
-                  {showResult === 'correct' ? '✓' : '✗'}
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Color buttons */}
-      <div className="grid grid-cols-5 gap-4 mt-8">
-        {Object.entries(COLORS).map(([name, color]) => (
-          <button
-            key={name}
-            onClick={() => handleColorClick(color)}
-            disabled={!gameStarted || showResult !== null}
-            className="w-16 h-16 rounded-full shadow-lg transform hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: color }}
-          />
-        ))}
-      </div>
-
-      <div className="mt-8 text-gray-300 text-center">
-        <p>Click the button matching the COLOR NAME, not the color you see!</p>
-        <p className="text-sm mt-2">Example: If you see "Red" written in blue, click the red button.</p>
+        )}
       </div>
     </div>
   );

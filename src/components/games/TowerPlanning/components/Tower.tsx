@@ -8,23 +8,23 @@ interface TowerProps {
 
 export default function Tower({ towers, selectedTower, onTowerClick }: TowerProps) {
   return (
-    <div className="flex justify-center gap-16 p-8">
+    <div className="flex justify-center items-center gap-8 p-4">
       {towers.map((tower, towerIndex) => (
         <div
           key={towerIndex}
-          className={`flex flex-col justify-end items-center relative w-64 h-64 
+          className={`flex flex-col justify-end items-center relative w-48 h-48 
             ${selectedTower === towerIndex ? 'bg-amber-800/30' : 'bg-amber-900/20'} 
             rounded-lg cursor-pointer transition-colors duration-200 hover:bg-amber-800/40`}
           onClick={() => onTowerClick(towerIndex)}
         >
           {/* Base pole */}
-          <div className="absolute bottom-0 w-4 h-full bg-amber-700 rounded-t-full" />
+          <div className="absolute bottom-0 w-3 h-full bg-amber-700 rounded-t-full" />
 
           {/* Base platform */}
-          <div className="w-full h-4 bg-amber-800 rounded-lg z-10" />
+          <div className="w-full h-3 bg-amber-800 rounded-lg z-10" />
 
           {/* Disks */}
-          <div className="flex flex-col-reverse mb-4 items-center absolute bottom-4">
+          <div className="flex flex-col-reverse mb-3 items-center absolute bottom-3">
             {tower.map((diskSize, diskIndex) => (
               <Disk 
                 key={diskIndex} 
@@ -45,12 +45,12 @@ interface DiskProps {
 }
 
 function Disk({ size, isTop }: DiskProps) {
-  const width = 40 + size * 20; // Base width + size multiplier
+  const width = 30 + size * 15; // Reduced size multiplier
 
   return (
     <div
-      className={`h-8 rounded-lg transition-all duration-200 flex items-center justify-center
-        ${isTop ? 'ring-4 ring-yellow-400 animate-pulse' : ''}
+      className={`h-6 rounded-lg transition-all duration-200 flex items-center justify-center
+        ${isTop ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
         ${getDiskColorClass(size)}`}
       style={{ width: `${width}px` }}
     >

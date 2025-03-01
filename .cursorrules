@@ -1,0 +1,137 @@
+# Cursor Rules for Minigame3j Project
+# कर्सर रूल्स फॉर मिनीगेम प्रोजेक्ट
+
+# 1. File Structure Rules (फाइल स्ट्रक्चर रूल्स)
+[file.structure]
+components/
+  ├── GameName/              # Each game in its own directory
+  │   ├── index.tsx         # Main component export
+  │   ├── GameName.tsx      # Main component
+  │   ├── GameName.types.ts # Type definitions
+  │   ├── GameName.utils.ts # Utility functions
+  │   ├── GameName.test.tsx # Tests
+  │   └── components/       # Sub-components
+services/
+  └── metrics/
+      ├── index.ts
+      ├── metricsService.ts
+      └── metricsCalculator.ts
+types/
+  └── cognitive/
+      ├── index.ts          # Barrel file for all types
+      └── metrics.types.ts  # Shared metric types
+
+# 2. Naming Conventions (नामकरण के नियम)
+[naming.conventions]
+files:          PascalCase for components (GameMetrics.tsx)
+types:          PascalCase for interfaces/types (interface GameMetrics)
+variables:      camelCase (const gameScore)
+constants:      UPPER_SNAKE_CASE (const MAX_SCORE)
+css-classes:    kebab-case (class="game-container")
+
+# 3. Anti-Duplication Rules (डुप्लिकेशन विरोधी नियम)
+[anti.duplication]
+- No duplicate file names with different cases
+- No duplicate type definitions across files
+- No duplicate utility functions
+- No duplicate component logic
+- Use shared constants and configurations
+- Centralize type definitions
+- Reuse common components
+
+# 4. Component Organization (कॉम्पोनेंट ऑर्गनाइजेशन)
+[component.organization]
+- One main component per file
+- Separate types into .types.ts
+- Separate utilities into .utils.ts
+- Group related components in feature folders
+- Use index.ts for clean exports
+- Keep components focused and single-responsibility
+
+# 5. Import Rules (इम्पोर्ट रूल्स)
+[import.rules]
+- Use absolute imports from src/
+- No duplicate imports
+- Group imports by type (React, Components, Utils, Types)
+- Use barrel files for cleaner imports
+- Avoid circular dependencies
+
+# 6. Type Management (टाइप मैनेजमेंट)
+[type.management]
+- Define base types in shared location
+- Extend base types for specific needs
+- Use type unions for variants
+- Keep type definitions DRY
+- Use proper type exports
+
+# 7. Metrics Implementation (मेट्रिक्स इम्प्लीमेंटेशन)
+[metrics.implementation]
+- Use centralized metrics service
+- Implement consistent tracking methods
+- Share calculation utilities
+- Use typed events and payloads
+- Maintain metric naming consistency
+
+# 8. Testing Standards (टेस्टिंग स्टैंडर्ड्स)
+[testing.standards]
+- Test files alongside components
+- Use consistent testing patterns
+- Share test utilities
+- Mock services consistently
+- Test edge cases
+
+# 9. Style Guidelines (स्टाइल गाइडलाइन्स)
+[style.guidelines]
+- Use Tailwind classes consistently
+- Share color schemes
+- Maintain responsive design patterns
+- Use CSS modules when needed
+- Follow accessibility standards
+
+# 10. Performance Rules (परफॉरमेंस रूल्स)
+[performance.rules]
+- Lazy load components
+- Optimize re-renders
+- Memoize expensive calculations
+- Use proper dependency arrays
+- Implement proper cleanup
+
+# 11. Error Handling (एरर हैंडलिंग)
+[error.handling]
+- Consistent error boundaries
+- Typed error objects
+- Centralized error logging
+- User-friendly error messages
+- Proper error recovery
+
+# 12. Documentation (डॉक्युमेंटेशन)
+[documentation]
+- JSDoc for public functions
+- Component usage examples
+- Type documentation
+- Architecture decisions
+- Setup instructions
+
+# 13. State Management (स्टेट मैनेजमेंट)
+[state.management]
+- Consistent state patterns
+- Proper context usage
+- Typed reducers
+- Immutable updates
+- Performance considerations
+
+# 14. Security Rules (सुरक्षा नियम)
+[security.rules]
+- No sensitive data in code
+- Proper API key handling
+- Input sanitization
+- XSS prevention
+- CSRF protection
+
+# 15. Git Practices (गिट प्रैक्टिसेज)
+[git.practices]
+- Meaningful commit messages
+- Feature branch naming
+- No sensitive data in commits
+- Regular small commits
+- Proper PR descriptions 

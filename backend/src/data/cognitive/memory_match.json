@@ -1,0 +1,29 @@
+{
+  "users": {},
+  "aggregateStats": {
+    "totalAssessments": 0,
+    "averageScores": {
+      "memory": {
+        "accuracy": 0,
+        "reactionTime": 0,
+        "span": 0,
+        "errorRate": 0
+      },
+      "attention": {
+        "focusScore": 0,
+        "consistency": 0,
+        "deliberationTime": 0
+      },
+      "processing": {
+        "cognitiveLoad": 0,
+        "processingSpeed": 0,
+        "efficiency": 0
+      },
+      "overall": {
+        "performanceScore": 0,
+        "confidenceLevel": 0,
+        "percentileRank": 0
+      }
+    }
+  }
+} 

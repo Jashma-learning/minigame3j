@@ -1,13 +1,17 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { GameSpecificMetrics } from '../types/cognitiveMetrics';
 import { GameMetrics } from '../types/metrics';
+import MetricsDisplay from './MetricsDisplay';
+import { gameSeriesConfig } from '../utils/gameSeriesConfig';
 
 export interface GameSubmissionProps {
   isComplete: boolean;
   onSubmit: () => void;
-  gameMetrics: GameMetrics;
+  gameMetrics: Partial<GameSpecificMetrics> | GameMetrics;
   nextGame?: string;
   isLastGame?: boolean;
+  currentGameId: string;
 }
 
 const GameSubmission: React.FC<GameSubmissionProps> = ({
@@ -15,42 +19,42 @@ const GameSubmission: React.FC<GameSubmissionProps> = ({
   onSubmit,
   gameMetrics,
   nextGame,
-  isLastGame
+  isLastGame,
+  currentGameId
 }) => {
   const router = useRouter();
+  const currentGameIndex = gameSeriesConfig.findIndex(game => game.id === currentGameId);
+  const totalGames = gameSeriesConfig.length;
 
-  const handleSubmit = async () => {
-    await onSubmit();
-    
-    if (nextGame) {
-      router.push(`/${nextGame}`);
+  const handleNext = async () => {
+    try {
+      // First submit the metrics
+      onSubmit();
+      
+      // Small delay to ensure metrics are saved
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Then handle navigation
+      if (isLastGame) {
+        router.push('/progress');
+      } else if (nextGame) {
+        router.push(nextGame);
+      }
+    } catch (error) {
+      console.error('Error during game completion:', error);
     }
   };
 
   if (!isComplete) return null;
 
-  const formatMetricKey = (key: string): string => {
-    return key
-      .replace(/([A-Z])/g, ' $1') // Add space before capital letters
-      .replace(/^./, str => str.toUpperCase()); // Capitalize first letter
-  };
-
-  const formatMetricValue = (value: number, metricKey: string): string => {
-    if (typeof value === 'number') {
-      // Format percentages
-      if (metricKey.toLowerCase().includes('accuracy')) {
-        return `${value.toFixed(1)}%`;
-      }
-      // Format time values
-      if (metricKey.toLowerCase().includes('time')) {
-        return `${value.toFixed(1)}s`;
-      }
-    }
-    return String(value);
-  };
+  // Convert raw metrics to BaseMetric format if needed
+  const formattedMetrics = Object.entries(gameMetrics).reduce((acc, [key, value]) => ({
+    ...acc,
+    [key]: typeof value === 'object' ? value : { value, timestamp: Date.now() }
+  }), {});
 
   return (
-    <div className="fixed bottom-8 left-0 right-0 flex justify-center items-center z-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 mx-4 max-w-md w-full">
         <h3 className="text-xl font-bold mb-4 text-center">
           {isLastGame ? 'Complete Game Series!' : 'Game Complete!'}
@@ -58,21 +62,21 @@ const GameSubmission: React.FC<GameSubmissionProps> = ({
         
         <div className="mb-4">
           <h4 className="font-semibold mb-2">Your Performance:</h4>
-          <div className="space-y-2">
-            {Object.entries(gameMetrics).map(([key, value]) => (
-              <div key={key} className="flex justify-between">
-                <span className="text-gray-600">{formatMetricKey(key)}:</span>
-                <span className="font-medium">{formatMetricValue(value, key)}</span>
-              </div>
-            ))}
-          </div>
+          <MetricsDisplay metrics={formattedMetrics} />
+        </div>
+
+        <div className="text-sm text-gray-500 mb-4 text-center">
+          Game {currentGameIndex + 1} of {totalGames}
         </div>
 
         <button
-          onClick={handleSubmit}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+          onClick={handleNext}
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
         >
-          {isLastGame ? 'Complete Series' : 'Submit & Continue'}
+          {isLastGame ? 'View Progress' : 'Continue to Next Game'}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
         </button>
       </div>
     </div>

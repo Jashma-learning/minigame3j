@@ -23,6 +23,11 @@ export function generatePattern(level: number): number[][] {
     }
   }
 
+  // Ensure pattern has some structure (optional)
+  if (Math.random() < 0.5) {
+    addSymmetry(pattern);
+  }
+
   return pattern;
 }
 
@@ -58,6 +63,35 @@ export function calculatePatternComplexity(pattern: number[][]): number {
   }
 
   return complexity;
+}
+
+function addSymmetry(pattern: number[][]): void {
+  const size = pattern.length;
+  const symmetryType = Math.floor(Math.random() * 3); // 0: horizontal, 1: vertical, 2: diagonal
+
+  switch (symmetryType) {
+    case 0: // Horizontal symmetry
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < Math.floor(size / 2); j++) {
+          pattern[i][size - 1 - j] = pattern[i][j];
+        }
+      }
+      break;
+    case 1: // Vertical symmetry
+      for (let i = 0; i < Math.floor(size / 2); i++) {
+        for (let j = 0; j < size; j++) {
+          pattern[size - 1 - i][j] = pattern[i][j];
+        }
+      }
+      break;
+    case 2: // Diagonal symmetry
+      for (let i = 0; i < size; i++) {
+        for (let j = i + 1; j < size; j++) {
+          pattern[j][i] = pattern[i][j];
+        }
+      }
+      break;
+  }
 }
 
 export function generateHint(pattern: number[][], playerPattern: number[][]): { row: number; col: number } {

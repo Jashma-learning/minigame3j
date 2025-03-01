@@ -1,156 +1,221 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import RotatingObject from './components/RotatingObject';
-import SilhouetteOptions from './components/SilhouetteOptions';
-import { generateRandomRotation, calculateScore } from './utils/gameUtils';
-import { ShapeConfig } from './types';
+import { SpatialNavigatorMetrics } from '../../../types/cognitiveMetrics';
+import Scene from './components/Scene';
+import Controls from './components/Controls';
+import GameSubmission from '../../GameSubmission';
+import { getGameNavigationInfo } from '../../../utils/gameNavigation';
 
-interface SpatialNavigatorGameProps {
-  onComplete: (score: number) => void;
+interface GameState {
+  phase: 'instruction' | 'playing' | 'feedback' | 'complete';
+  level: number;
+  score: number;
+  timeLeft: number;
+  targetRotation: [number, number, number];
+  currentRotation: [number, number, number];
+  attempts: number;
+  startTime: number;
+  rotationHistory: number[];
 }
 
-const SHAPES: ShapeConfig[] = [
-  { type: 'cube', difficulty: 1 },
-  { type: 'pyramid', difficulty: 2 },
-  { type: 'lShape', difficulty: 3 },
-  { type: 'tShape', difficulty: 4 },
-  { type: 'cross', difficulty: 5 }
-];
+interface SpatialNavigatorGameProps {
+  onComplete?: (metrics: Partial<SpatialNavigatorMetrics>) => void;
+}
 
-const SpatialNavigatorGame: React.FC<SpatialNavigatorGameProps> = ({ onComplete }) => {
-  const [currentLevel, setCurrentLevel] = useState(1);
-  const [score, setScore] = useState(0);
-  const [attempts, setAttempts] = useState(0);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [currentShape, setCurrentShape] = useState<ShapeConfig>(SHAPES[0]);
-  const [rotation, setRotation] = useState(() => generateRandomRotation());
-  const [showFeedback, setShowFeedback] = useState<'correct' | 'wrong' | null>(null);
-  
-  const rotationSpeed = useRef(0.5 + (currentLevel * 0.1));
-  const timeStarted = useRef(Date.now());
+const INITIAL_TIME = 60; // 60 seconds per level
+const MAX_LEVEL = 10;
+const ROTATION_THRESHOLD = 0.1; // Acceptable difference in rotation
+
+export default function SpatialNavigatorGame({ onComplete }: SpatialNavigatorGameProps) {
+  const [gameState, setGameState] = useState<GameState>({
+    phase: 'instruction',
+    level: 1,
+    score: 0,
+    timeLeft: INITIAL_TIME,
+    targetRotation: [0, 0, 0],
+    currentRotation: [0, 0, 0],
+    attempts: 0,
+    startTime: Date.now(),
+    rotationHistory: []
+  });
+
+  const [metrics, setMetrics] = useState<Partial<SpatialNavigatorMetrics>>({});
+  const { nextGame, isLastGame } = getGameNavigationInfo('spatial-navigator');
+
+  useEffect(() => {
+    if (gameState.phase === 'playing' && gameState.timeLeft > 0) {
+      const timer = setInterval(() => {
+        setGameState(prev => ({
+          ...prev,
+          timeLeft: prev.timeLeft - 1
+        }));
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [gameState.phase, gameState.timeLeft]);
 
   const startGame = useCallback(() => {
-    setGameStarted(true);
-    setScore(0);
-    setAttempts(0);
-    setCurrentLevel(1);
-    setCurrentShape(SHAPES[0]);
-    setRotation(generateRandomRotation());
-    timeStarted.current = Date.now();
+    const newTargetRotation: [number, number, number] = [
+      Math.random() * Math.PI * 2,
+      Math.random() * Math.PI * 2,
+      Math.random() * Math.PI * 2
+    ];
+
+    setGameState(prev => ({
+      ...prev,
+      phase: 'playing',
+      targetRotation: newTargetRotation,
+      currentRotation: [0, 0, 0],
+      timeLeft: INITIAL_TIME,
+      startTime: Date.now(),
+      rotationHistory: []
+    }));
   }, []);
 
-  const handleSilhouetteSelect = useCallback((selectedRotation: [number, number, number]) => {
-    const isCorrect = rotation.every((value, index) => 
-      Math.abs(value - selectedRotation[index]) < 0.1
+  const handleRotationChange = useCallback((rotation: [number, number, number]) => {
+    setGameState(prev => ({
+      ...prev,
+      currentRotation: rotation,
+      rotationHistory: [...prev.rotationHistory, Math.abs(
+        rotation.reduce((sum, val, i) => sum + Math.abs(val - prev.targetRotation[i]), 0)
+      )]
+    }));
+  }, []);
+
+  const calculateMetrics = useCallback(() => {
+    const totalTime = Date.now() - gameState.startTime;
+    const averageRotationError = gameState.rotationHistory.reduce((sum, val) => sum + val, 0) / 
+                                (gameState.rotationHistory.length || 1);
+    
+    return {
+      Spatial_Rotation_Accuracy: {
+        value: (gameState.score / (MAX_LEVEL * 1000)) * 100,
+        timestamp: Date.now()
+      },
+      Mental_Rotation_Speed: {
+        value: totalTime / gameState.level,
+        timestamp: Date.now()
+      },
+      Navigation_Error_Rate: {
+        value: averageRotationError * 100,
+        timestamp: Date.now()
+      },
+      Spatial_Problem_Solving: {
+        value: gameState.score,
+        timestamp: Date.now()
+      },
+      Fine_Motor_Skills: {
+        value: 100 - (gameState.attempts * 10),
+        timestamp: Date.now()
+      },
+      Cognitive_Working_Capacity: {
+        value: (gameState.level / MAX_LEVEL) * 100,
+        timestamp: Date.now()
+      }
+    };
+  }, [gameState]);
+
+  const checkRotation = useCallback(() => {
+    const isCorrect = gameState.targetRotation.every((target, i) => 
+      Math.abs(target - gameState.currentRotation[i]) <= ROTATION_THRESHOLD
     );
 
-    setShowFeedback(isCorrect ? 'correct' : 'wrong');
-    setAttempts(prev => prev + 1);
-
     if (isCorrect) {
-      const timeTaken = (Date.now() - timeStarted.current) / 1000;
-      const levelScore = calculateScore(currentLevel, timeTaken, attempts);
-      setScore(prev => prev + levelScore);
+      const timeBonus = Math.floor(gameState.timeLeft * 10);
+      const levelBonus = gameState.level * 100;
+      const newScore = gameState.score + 1000 + timeBonus + levelBonus;
 
-      // Progress to next level
-      setTimeout(() => {
-        if (currentLevel >= SHAPES.length) {
-          onComplete(score + levelScore);
-        } else {
-          setCurrentLevel(prev => prev + 1);
-          setCurrentShape(SHAPES[currentLevel]);
-          setRotation(generateRandomRotation());
-          rotationSpeed.current = 0.5 + (currentLevel * 0.1);
-          timeStarted.current = Date.now();
-        }
-        setShowFeedback(null);
-      }, 1500);
+      if (gameState.level >= MAX_LEVEL) {
+        const finalMetrics = calculateMetrics();
+        setMetrics(finalMetrics);
+        setGameState(prev => ({
+          ...prev,
+          phase: 'complete',
+          score: newScore
+        }));
+      } else {
+        setGameState(prev => ({
+          ...prev,
+          phase: 'feedback',
+          level: prev.level + 1,
+          score: newScore
+        }));
+      }
     } else {
-      setTimeout(() => {
-        setShowFeedback(null);
-      }, 1000);
+      setGameState(prev => ({
+        ...prev,
+        attempts: prev.attempts + 1,
+        phase: prev.attempts >= 2 ? 'complete' : 'feedback'
+      }));
     }
-  }, [currentLevel, rotation, attempts, score, onComplete]);
+  }, [gameState, calculateMetrics]);
+
+  const handleSubmit = useCallback(() => {
+    onComplete?.(metrics);
+  }, [metrics, onComplete]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-start py-4 px-6">
-      <div className="text-center mb-4">
-        <h1 className="text-3xl font-bold mb-2 text-white">Spatial Navigator</h1>
-        <div className="flex gap-4 justify-center">
-          <div className="px-4 py-2 bg-purple-700 rounded-lg">
-            Level: {currentLevel}
+    <div className="min-h-[calc(100vh-5rem)] w-full flex flex-col items-center justify-start bg-gradient-to-br from-blue-50 to-indigo-100 py-2 px-4">
+      <div className="w-full max-w-xl h-[95%] flex flex-col items-center gap-4">
+        {/* Game Header */}
+        <div className="w-full text-center mb-2">
+          <div className="flex gap-1.5 justify-center">
+            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+              Level {gameState.level}
+            </span>
+            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+              Score: {gameState.score}
+            </span>
+            <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+              Time: {gameState.timeLeft}s
+            </span>
           </div>
-          <div className="px-4 py-2 bg-purple-700 rounded-lg">
-            Score: {score}
+        </div>
+
+        {/* Game Container */}
+        <div className="w-full aspect-[4/3] bg-white/80 backdrop-blur-sm rounded-md shadow-md p-2">
+          <div className="w-full h-full">
+            <Canvas
+              camera={{ position: [0, 2, 5], fov: 75 }}
+              className="w-full h-full"
+            >
+              <Scene
+                targetRotation={gameState.targetRotation}
+                currentRotation={gameState.currentRotation}
+                onRotationChange={handleRotationChange}
+                isInteractive={gameState.phase === 'playing'}
+              />
+              <OrbitControls 
+                enableZoom={false}
+                enablePan={false}
+                enabled={gameState.phase === 'playing'}
+              />
+            </Canvas>
           </div>
-          <div className="px-4 py-2 bg-purple-700 rounded-lg">
-            Attempts: {attempts}
-          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="w-full flex justify-center">
+          <Controls
+            gameState={gameState}
+            onStart={startGame}
+            onCheck={checkRotation}
+            onNextLevel={startGame}
+          />
         </div>
       </div>
 
-      {!gameStarted ? (
-        <div className="flex flex-col items-center justify-center flex-1">
-          <button
-            onClick={startGame}
-            className="px-6 py-3 bg-green-500 text-white rounded-lg text-xl hover:bg-green-600 transition-colors"
-          >
-            Start Game
-          </button>
-          <p className="mt-4 text-gray-300 text-center max-w-md">
-            Test your spatial reasoning skills! Match the rotating shape to its correct orientation.
-          </p>
-        </div>
-      ) : (
-        <div className="w-full max-w-3xl mx-auto flex flex-col gap-4">
-          <div className="relative w-full" style={{ height: '40vh', minHeight: '300px' }}>
-            <div className="absolute inset-0 bg-gray-800 rounded-xl overflow-hidden">
-              <Canvas camera={{ position: [0, 2, 5] }}>
-                <ambientLight intensity={0.7} />
-                <pointLight position={[10, 10, 10]} intensity={1} />
-                <pointLight position={[-10, -10, -10]} intensity={0.5} />
-                <RotatingObject
-                  shape={currentShape}
-                  rotation={rotation}
-                  speed={rotationSpeed.current}
-                />
-                <OrbitControls 
-                  enableZoom={false}
-                  enablePan={false}
-                  minPolarAngle={Math.PI / 4}
-                  maxPolarAngle={Math.PI / 2}
-                />
-              </Canvas>
-
-              {showFeedback && (
-                <div className={`absolute inset-0 flex items-center justify-center bg-opacity-50 ${
-                  showFeedback === 'correct' ? 'bg-green-500' : 'bg-red-500'
-                }`}>
-                  <span className="text-6xl text-white">
-                    {showFeedback === 'correct' ? '✓' : '✗'}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="w-full">
-            <SilhouetteOptions
-              shape={currentShape}
-              onSelect={handleSilhouetteSelect}
-              disabled={showFeedback !== null}
-            />
-          </div>
-
-          <div className="text-center text-gray-300 mt-2">
-            <p>Match the rotating shape to its correct silhouette!</p>
-            <p className="text-sm mt-1">Tip: Pay attention to the orientation of the shape.</p>
-          </div>
-        </div>
-      )}
+      {/* Game Submission */}
+      <GameSubmission
+        isComplete={gameState.phase === 'complete'}
+        onSubmit={handleSubmit}
+        gameMetrics={metrics}
+        nextGame={nextGame?.path}
+        isLastGame={isLastGame}
+        currentGameId="spatial-navigator"
+      />
     </div>
   );
-};
-
-export default SpatialNavigatorGame; 
+} 

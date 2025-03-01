@@ -4,52 +4,30 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import { soundEffect } from '@/utils/sound';
 import { useGameProgress } from '../../../contexts/GameProgressContext';
-import { getNextGame, isLastGame } from '../../../utils/gameSeriesConfig';
-import GameSubmission from '../../GameSubmission';
-import { MemoryMatchMetrics } from '../../../types/metrics';
+import { getNextGame } from '../../../utils/gameSeriesConfig';
+import { MemoryMatchGameState, MemoryMatchMetrics } from '../../../types/cognitive/memoryMatch.types';
+import { calculateMemoryMatchMetrics, calculateMatchTime } from './MemoryMatch.utils';
 
 // Game icons (emojis) for cards
-const ICONS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮'];
-
-interface GameConfig {
-  gridSize: number;
-  timeLimit: number | null;
-}
-
-interface GameStats {
-  bestMoves: number;
-  bestTime: number;
-  gamesPlayed: number;
-}
+const ICONS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'];
 
 interface MemoryMatchGameProps {
   onComplete?: (metrics: MemoryMatchMetrics) => void;
 }
 
 const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onComplete }) => {
-  const [cards, setCards] = useState<Array<{ id: number; icon: string; isFlipped: boolean; isMatched: boolean }>>([]);
-  const [flippedCards, setFlippedCards] = useState<number[]>([]);
-  const [matches, setMatches] = useState<number>(0);
-  const [moves, setMoves] = useState<number>(0);
-  const [gameConfig, setGameConfig] = useState<GameConfig>({
-    gridSize: 4, // 4x4 grid
-    timeLimit: 60, // 60 seconds default time limit
+  // Game state
+  const [cards, setCards] = useState<Array<{ id: string; icon: string; isFlipped: boolean; isMatched: boolean }>>([]);
+  const [gameState, setGameState] = useState<MemoryMatchGameState>({
+    currentPair: [],
+    matchedPairs: [],
+    attempts: 0,
+    viewTimestamps: {},
+    matchTimes: []
   });
+
   const [gameStarted, setGameStarted] = useState<boolean>(false);
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [gameStats, setGameStats] = useState<GameStats>({
-    bestMoves: Infinity,
-    bestTime: Infinity,
-    gamesPlayed: 0,
-  });
-  const [showCongrats, setShowCongrats] = useState<boolean>(false);
   const [isGameComplete, setIsGameComplete] = useState(false);
-  const [gameMetrics, setGameMetrics] = useState<MemoryMatchMetrics>({
-    score: 0,
-    timeElapsed: 0,
-    matchAccuracy: 0,
-    totalMoves: 0
-  });
 
   const { completeGame } = useGameProgress();
   const nextGame = getNextGame('memory-match');
@@ -57,225 +35,249 @@ const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onComplete }) => {
   // Initialize game
   useEffect(() => {
     initializeGame();
-  }, [gameConfig.gridSize]);
-
-  // Timer logic
-  useEffect(() => {
-    if (gameStarted && gameConfig.timeLimit && timeLeft !== null) {
-      if (timeLeft > 0) {
-        const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-        return () => clearTimeout(timer);
-      } else {
-        endGame(false);
-      }
-    }
-  }, [timeLeft, gameStarted]);
+  }, []);
 
   const initializeGame = () => {
-    const pairs = Math.floor((gameConfig.gridSize * gameConfig.gridSize) / 2);
-    const selectedIcons = ICONS.slice(0, pairs);
-    const cardPairs = [...selectedIcons, ...selectedIcons]
+    const cardPairs = [...ICONS, ...ICONS]
       .sort(() => Math.random() - 0.5)
       .map((icon, index) => ({
-        id: index,
+        id: index.toString(),
         icon,
         isFlipped: false,
         isMatched: false,
       }));
 
     setCards(cardPairs);
-    setFlippedCards([]);
-    setMatches(0);
-    setMoves(0);
+    setGameState({
+      currentPair: [],
+      matchedPairs: [],
+      attempts: 0,
+      viewTimestamps: {},
+      matchTimes: []
+    });
     setGameStarted(true);
-    setShowCongrats(false);
-    if (gameConfig.timeLimit) {
-      setTimeLeft(gameConfig.timeLimit);
-    }
   };
 
-  const handleCardClick = (cardId: number) => {
-    if (!gameStarted) return;
-    
-    // Prevent clicking if two cards are already flipped
-    if (flippedCards.length === 2) return;
-    
-    // Prevent clicking the same card twice
-    if (flippedCards.includes(cardId)) return;
-    
-    // Prevent clicking matched cards
-    if (cards[cardId].isMatched) return;
+  const handleCardClick = (cardId: string) => {
+    if (!gameStarted || gameState.currentPair.length === 2) return;
+    if (gameState.currentPair.includes(cardId)) return;
+    if (cards.find(c => c.id === cardId)?.isMatched) return;
 
-    soundEffect.playCardFlip();
+    soundEffect?.playCardFlip();
 
-    const newCards = [...cards];
-    newCards[cardId].isFlipped = true;
+    // Record first view timestamp
+    if (!gameState.viewTimestamps[cardId]) {
+      setGameState(prev => ({
+        ...prev,
+        viewTimestamps: {
+          ...prev.viewTimestamps,
+          [cardId]: Date.now()
+        }
+      }));
+    }
+
+    // Update cards and current pair
+    const newCards = cards.map(card => 
+      card.id === cardId ? { ...card, isFlipped: true } : card
+    );
     setCards(newCards);
     
-    const newFlippedCards = [...flippedCards, cardId];
-    setFlippedCards(newFlippedCards);
+    const newCurrentPair = [...gameState.currentPair, cardId];
+    setGameState(prev => ({
+      ...prev,
+      currentPair: newCurrentPair
+    }));
 
-    if (newFlippedCards.length === 2) {
-      setMoves(moves + 1);
-      checkForMatch(newFlippedCards);
+    // Check for match when we have a pair
+    if (newCurrentPair.length === 2) {
+      checkForMatch(newCurrentPair);
     }
   };
 
-  const checkForMatch = (currentFlippedCards: number[]) => {
-    const [first, second] = currentFlippedCards;
+  const checkForMatch = (currentPair: string[]) => {
+    const [first, second] = currentPair;
+    const firstCard = cards.find(c => c.id === first)!;
+    const secondCard = cards.find(c => c.id === second)!;
     
     setTimeout(() => {
-      if (cards[first].icon === cards[second].icon) {
-        soundEffect.playMatch();
-        const newCards = [...cards];
-        newCards[first].isMatched = true;
-        newCards[second].isMatched = true;
-        setCards(newCards);
-        setMatches(matches + 1);
+      setGameState(prev => ({
+        ...prev,
+        attempts: prev.attempts + 1,
+        currentPair: []
+      }));
+
+      if (firstCard.icon === secondCard.icon) {
+        soundEffect?.playMatch();
         
-        // Check for game completion
-        if (matches + 1 === cards.length / 2) {
-          endGame(true);
+        // Calculate match time
+        const matchTime = calculateMatchTime(
+          Math.min(gameState.viewTimestamps[first], gameState.viewTimestamps[second]),
+          Date.now()
+        );
+
+        // Update game state
+        setGameState(prev => ({
+          ...prev,
+          matchedPairs: [...prev.matchedPairs, ...currentPair],
+          matchTimes: [...prev.matchTimes, matchTime]
+        }));
+
+        // Update cards
+        setCards(prev => prev.map(card => 
+          currentPair.includes(card.id) ? { ...card, isMatched: true } : card
+        ));
+
+        // Check if game is complete
+        if (gameState.matchedPairs.length + 2 === cards.length) {
+          endGame();
         }
       } else {
-        soundEffect.playNoMatch();
-        const newCards = [...cards];
-        newCards[first].isFlipped = false;
-        newCards[second].isFlipped = false;
-        setCards(newCards);
+        soundEffect?.playNoMatch();
+        
+        // Flip cards back
+        setCards(prev => prev.map(card => 
+          currentPair.includes(card.id) ? { ...card, isFlipped: false } : card
+        ));
       }
-      setFlippedCards([]);
     }, 1000);
   };
 
-  const calculateScore = () => {
-    const timeSpent = gameConfig.timeLimit! - (timeLeft ?? 0);
-    const baseScore = 1000;
-    const timeBonus = Math.max(0, 30 - timeSpent) * 10;
-    const movesPenalty = Math.max(0, moves - cards.length) * 5;
-    return Math.max(0, baseScore + timeBonus - movesPenalty);
-  };
-
-  const endGame = (won: boolean) => {
+  const endGame = () => {
     setGameStarted(false);
-    if (won) {
-      const score = calculateScore();
-      const timeSpent = gameConfig.timeLimit! - (timeLeft ?? 0);
-      setGameStats(prev => ({
-        bestMoves: Math.min(prev.bestMoves, moves),
-        bestTime: Math.min(prev.bestTime, timeSpent),
-        gamesPlayed: prev.gamesPlayed + 1,
-      }));
-      setShowCongrats(true);
-      const metrics: MemoryMatchMetrics = {
-        score,
-        timeElapsed: timeSpent,
-        matchAccuracy: (matches / (cards.length / 2)) * 100,
-        totalMoves: moves
-      };
-      setGameMetrics(metrics);
-      setIsGameComplete(true);
-      onComplete?.(metrics);
-    }
-  };
+    setIsGameComplete(true);
 
-  const increaseDifficulty = () => {
-    if (gameConfig.gridSize < 6) { // Max 6x6 grid
-      setGameConfig({
-        ...gameConfig,
-        gridSize: gameConfig.gridSize + 2,
-        timeLimit: Math.max(30, gameConfig.timeLimit! - 15), // Reduce time but minimum 30 seconds
-      });
-    }
-  };
+    // Calculate final metrics
+    const metrics = calculateMemoryMatchMetrics(gameState);
+    
+    // Send metrics to parent
+    onComplete?.(metrics);
 
-  const handleSubmit = () => {
-    completeGame('memory-match', gameMetrics);
-    onComplete?.(gameMetrics);
+    // Complete game in progress context
+    completeGame('memory-match', metrics.memory.accuracy);
+
+    // Send metrics to backend
+    fetch('/api/metrics/memory-match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'user_123', // Replace with actual user ID
+        metrics: metrics,
+        cognitiveMetrics: {
+          memory_accuracy: metrics.memory.accuracy,
+          memory_reaction_time: metrics.memory.reactionTime,
+          memory_span: metrics.memory.span,
+          memory_error_rate: metrics.memory.errorRate,
+          attention_focus: metrics.attention.focusScore,
+          attention_consistency: metrics.attention.consistency,
+          attention_deliberation: metrics.attention.deliberationTime,
+          processing_load: metrics.processing.cognitiveLoad,
+          processing_speed: metrics.processing.processingSpeed,
+          processing_efficiency: metrics.processing.efficiency,
+          overall_performance: metrics.overall.performanceScore,
+          overall_confidence: metrics.overall.confidenceLevel,
+          overall_percentile: metrics.overall.percentileRank
+        }
+      }),
+    }).catch(console.error);
   };
 
   return (
-    <div className="relative min-h-screen bg-gray-50 p-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">Memory Match</h1>
-      
-      <div className="flex flex-col items-center gap-6 p-8">
-        <div className="text-center">
-          <div className="flex gap-4 mb-4">
-            <div className="px-4 py-2 bg-blue-100 rounded text-blue-900">Moves: {moves}</div>
-            <div className="px-4 py-2 bg-green-100 rounded text-green-900">Matches: {matches}</div>
-            {timeLeft !== null && (
-              <div className={`px-4 py-2 rounded ${timeLeft < 10 ? 'bg-red-100 text-red-900' : 'bg-yellow-100 text-yellow-900'}`}>
-                Time: {timeLeft}s
+    <div className="min-h-screen bg-gray-50 overflow-y-auto">
+      <div className="container mx-auto px-2 py-2">
+        <h1 className="text-2xl font-bold mb-2 text-center">Memory Match</h1>
+        
+        <div className="flex flex-col items-center max-w-2xl mx-auto">
+          {/* Game Stats */}
+          <div className="w-full mb-2">
+            <div className="flex flex-wrap justify-center gap-2 mb-2">
+              <div className="px-3 py-1 bg-blue-100 rounded text-blue-900 text-sm">
+                Attempts: {gameState.attempts}
               </div>
-            )}
+              <div className="px-3 py-1 bg-green-100 rounded text-green-900 text-sm">
+                Matches: {gameState.matchedPairs.length / 2}
+              </div>
+            </div>
           </div>
-          
-          {/* Stats Display */}
-          {gameStats.gamesPlayed > 0 && (
-            <div className="text-sm text-gray-300 mb-4">
-              <div>Best Moves: {gameStats.bestMoves === Infinity ? '-' : gameStats.bestMoves}</div>
-              <div>Best Time: {gameStats.bestTime === Infinity ? '-' : `${gameStats.bestTime}s`}</div>
-              <div>Games Played: {gameStats.gamesPlayed}</div>
+
+          {/* Game Grid */}
+          <div className="w-full max-w-[400px] mb-2">
+            <div 
+              className="grid gap-1 w-full grid-cols-4"
+              style={{ aspectRatio: '1' }}
+            >
+              {cards.map((card) => (
+                <Card
+                  key={card.id}
+                  {...card}
+                  onClick={() => handleCardClick(card.id)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Controls */}
+          {!isGameComplete && (
+            <button
+              className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
+              onClick={initializeGame}
+            >
+              New Game
+            </button>
+          )}
+
+          {/* Game Complete Message */}
+          {isGameComplete && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-4 rounded-lg text-center">
+                <h2 className="text-xl font-bold mb-2">Cognitive Assessment Complete</h2>
+                <div className="space-y-2 mb-4">
+                  {/* Memory Metrics */}
+                  <div className="border-b pb-2">
+                    <h3 className="font-semibold text-blue-600">Memory Performance</h3>
+                    <p className="text-sm">
+                      Accuracy: {Math.round(calculateMemoryMatchMetrics(gameState).memory.accuracy)}%
+                    </p>
+                    <p className="text-sm">
+                      Reaction Time: {calculateMemoryMatchMetrics(gameState).memory.reactionTime.toFixed(2)}s
+                    </p>
+                  </div>
+                  
+                  {/* Attention Metrics */}
+                  <div className="border-b pb-2">
+                    <h3 className="font-semibold text-purple-600">Attention Metrics</h3>
+                    <p className="text-sm">
+                      Focus Score: {Math.round(calculateMemoryMatchMetrics(gameState).attention.focusScore)}%
+                    </p>
+                    <p className="text-sm">
+                      Consistency: {Math.round(calculateMemoryMatchMetrics(gameState).attention.consistency)}%
+                    </p>
+                  </div>
+
+                  {/* Processing Metrics */}
+                  <div className="border-b pb-2">
+                    <h3 className="font-semibold text-green-600">Processing Speed</h3>
+                    <p className="text-sm">
+                      Efficiency: {Math.round(calculateMemoryMatchMetrics(gameState).processing.efficiency)}%
+                    </p>
+                    <p className="text-sm">
+                      Cognitive Load: {Math.round(calculateMemoryMatchMetrics(gameState).processing.cognitiveLoad)}%
+                    </p>
+                  </div>
+
+                  {/* Overall Score */}
+                  <div>
+                    <h3 className="font-semibold text-indigo-600">Overall Performance</h3>
+                    <p className="text-sm">
+                      Score: {Math.round(calculateMemoryMatchMetrics(gameState).overall.performanceScore)}%
+                    </p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">Moving to next assessment...</p>
+              </div>
             </div>
           )}
         </div>
-
-        {/* Congratulations Modal */}
-        {showCongrats && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="bg-white p-8 rounded-lg text-center">
-              <h2 className="text-2xl font-bold mb-4">🎉 Congratulations! 🎉</h2>
-              <p>You completed the puzzle in {moves} moves!</p>
-              <p className="mt-2">Score: {calculateScore()}</p>
-              <button
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                onClick={() => setShowCongrats(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div 
-          className="grid gap-4"
-          style={{
-            gridTemplateColumns: `repeat(${gameConfig.gridSize}, minmax(0, 1fr))`,
-          }}
-        >
-          {cards.map((card) => (
-            <Card
-              key={card.id}
-              {...card}
-              onClick={() => handleCardClick(card.id)}
-            />
-          ))}
-        </div>
-
-        <div className="flex gap-4">
-          <button
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-            onClick={initializeGame}
-          >
-            New Game
-          </button>
-          <button
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-            onClick={increaseDifficulty}
-            disabled={gameConfig.gridSize >= 6}
-          >
-            Increase Difficulty
-          </button>
-        </div>
       </div>
-
-      <GameSubmission
-        isComplete={isGameComplete}
-        onSubmit={handleSubmit}
-        gameMetrics={gameMetrics}
-        nextGame={nextGame?.path}
-        isLastGame={isLastGame('memory-match')}
-      />
     </div>
   );
 };

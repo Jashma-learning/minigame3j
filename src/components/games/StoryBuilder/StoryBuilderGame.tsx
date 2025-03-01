@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import StoryDisplay from './components/StoryDisplay';
 import WordBank from './components/WordBank';
 import { generateStoryTemplate, calculateScore } from './utils/gameUtils';
@@ -16,6 +17,7 @@ const INITIAL_CONFIG = {
 };
 
 const StoryBuilderGame: React.FC<StoryBuilderGameProps> = ({ onComplete }) => {
+  const router = useRouter();
   const [gameStarted, setGameStarted] = useState(false);
   const [score, setScore] = useState(0);
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
@@ -25,6 +27,7 @@ const StoryBuilderGame: React.FC<StoryBuilderGameProps> = ({ onComplete }) => {
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const [gameState, setGameState] = useState<GameState>('intro');
   const [feedback, setFeedback] = useState<string>('');
+  const [allStoriesCompleted, setAllStoriesCompleted] = useState(false);
 
   const startGame = useCallback(() => {
     const newStory = generateStoryTemplate(difficulty);
@@ -75,6 +78,7 @@ const StoryBuilderGame: React.FC<StoryBuilderGameProps> = ({ onComplete }) => {
     setTimeout(() => {
       if (difficulty === 'hard') {
         setGameState('complete');
+        setAllStoriesCompleted(true);
         onComplete(score + roundScore);
       } else {
         // Progress to next difficulty
@@ -83,6 +87,10 @@ const StoryBuilderGame: React.FC<StoryBuilderGameProps> = ({ onComplete }) => {
       }
     }, 3000);
   }, [currentStory, selectedWords, timeLeft, hintsLeft, difficulty, score, onComplete]);
+
+  const handleFinalSubmit = () => {
+    router.push('/report');
+  };
 
   // Timer effect
   useEffect(() => {
@@ -102,7 +110,7 @@ const StoryBuilderGame: React.FC<StoryBuilderGameProps> = ({ onComplete }) => {
   }, [gameStarted, gameState, timeLeft, submitStory]);
 
   return (
-    <div className="h-full w-full flex flex-col items-center justify-start p-4">
+    <div className="w-full h-[calc(100vh-12rem)] flex flex-col items-center justify-start p-4 bg-violet-900 rounded-lg overflow-y-auto">
       <div className="text-center mb-4">
         <h1 className="text-3xl font-bold mb-2 text-white">Story Builder</h1>
         {gameStarted && (
@@ -190,11 +198,40 @@ const StoryBuilderGame: React.FC<StoryBuilderGameProps> = ({ onComplete }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center"
           >
-            <div className="bg-white p-6 rounded-xl text-center">
-              <h3 className="text-2xl font-bold mb-4">{feedback}</h3>
-              <p className="text-gray-600">Score: {score}</p>
+            <div className="bg-violet-900 p-6 rounded-xl text-center">
+              <h3 className="text-xl font-bold text-white mb-2">{feedback}</h3>
+              <p className="text-violet-200 mb-4">Score: {score}</p>
+              {allStoriesCompleted && (
+                <button
+                  onClick={handleFinalSubmit}
+                  className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors mt-4"
+                >
+                  View Full Report
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {gameState === 'complete' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center"
+          >
+            <div className="bg-violet-900 p-8 rounded-xl text-center max-w-md">
+              <h2 className="text-2xl font-bold text-white mb-4">Congratulations!</h2>
+              <p className="text-violet-200 mb-6">You've completed all the stories!</p>
+              <p className="text-2xl font-bold text-violet-200 mb-6">Final Score: {score}</p>
+              <button
+                onClick={handleFinalSubmit}
+                className="px-8 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-lg font-medium"
+              >
+                View Full Report
+              </button>
             </div>
           </motion.div>
         )}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { GameProgressProvider } from "../contexts/GameProgressContext";
+import ClientLayout from "../components/ClientLayout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,19 +17,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <style>{`
-          body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-          }
-        `}</style>
-      </head>
       <body className={inter.className} suppressHydrationWarning>
-        <GameProgressProvider>
-          {children}
-        </GameProgressProvider>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );

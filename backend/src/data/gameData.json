@@ -1,3 +1,35 @@
 {
-  "users": {}
-} 
+  "users": {
+    "b529dda2-5bd4-4f9d-82bf-53cebb91ca4d": {
+      "name": "orry one",
+      "age": "12",
+      "educationLevel": "primary",
+      "previousExperience": "some",
+      "cognitiveConditions": [],
+      "preferredDifficulty": "medium",
+      "playTime": "15-30min"
+    },
+    "d4210d0d-250f-46c5-b261-831b1b790756": {
+      "name": "Steve",
+      "age": "10",
+      "educationLevel": "secondary",
+      "previousExperience": "some",
+      "cognitiveConditions": [],
+      "preferredDifficulty": "medium",
+      "playTime": "15-30min"
+    },
+    "548a367c-683a-42cb-a53c-e5ae3b092c02": {
+      "name": "Aniruddha",
+      "age": "10",
+      "educationLevel": "primary",
+      "previousExperience": "some",
+      "cognitiveConditions": [],
+      "preferredDifficulty": "medium",
+      "playTime": "15-30min"
+    }
+  },
+  "cognitiveProfiles": {},
+  "userData": {},
+  "gameScores": [],
+  "gameProgress": {}
+}

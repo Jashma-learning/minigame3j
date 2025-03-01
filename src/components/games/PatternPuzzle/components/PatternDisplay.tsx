@@ -1,13 +1,12 @@
 import React from 'react';
-import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 
 interface PatternDisplayProps {
   pattern: number[][];
 }
 
-export default function PatternDisplay({ pattern }: PatternDisplayProps) {
+function Pattern({ pattern }: PatternDisplayProps) {
   // Early return if pattern is invalid
   if (!pattern || !pattern.length || !pattern[0]) {
     return null;
@@ -47,5 +46,18 @@ export default function PatternDisplay({ pattern }: PatternDisplayProps) {
         maxPolarAngle={Math.PI / 3}
       />
     </>
+  );
+}
+
+export default function PatternDisplay({ pattern }: PatternDisplayProps) {
+  return (
+    <div className="w-full aspect-square max-w-[280px]">
+      <Canvas
+        camera={{ position: [8, 5, 8], fov: 50 }}
+        shadows
+      >
+        <Pattern pattern={pattern} />
+      </Canvas>
+    </div>
   );
 } 

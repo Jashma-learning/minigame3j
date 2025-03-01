@@ -5,19 +5,15 @@ import { GameObject } from '@/types/game';
 
 interface DraggableObjectProps {
   object: GameObject;
-  onDragStart?: (objectId: string) => void;
-  isInteractive?: boolean;
-  onPlaced?: (objectId: string, position: [number, number]) => void;
-  initialPosition?: [number, number];
+  onDragStart: () => void;
 }
 
-const DraggableObject: React.FC<DraggableObjectProps> = ({ 
-  object, 
-  onDragStart = () => {}, 
-  isInteractive = true,
-  onPlaced,
-  initialPosition 
-}) => {
+const DraggableObject: React.FC<DraggableObjectProps> = ({ object, onDragStart }) => {
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    e.dataTransfer.setData('text', object.id);
+    onDragStart();
+  };
+
   const renderObjectIcon = (geometry: string) => {
     switch (geometry) {
       case 'crystal':
@@ -37,25 +33,18 @@ const DraggableObject: React.FC<DraggableObjectProps> = ({
 
   return (
     <div
+      draggable
+      onDragStart={handleDragStart}
       className={`
-        w-12 h-12 flex items-center justify-center
-        bg-purple-100 rounded-lg 
-        ${isInteractive ? 'cursor-grab active:cursor-grabbing hover:bg-purple-200' : 'cursor-default'}
-        transition-colors
-        ${object.glow ? 'animate-pulse' : ''}
+        w-8 h-8 sm:w-10 sm:h-10
+        flex items-center justify-center
+        bg-white border border-purple-300
+        rounded-md cursor-move
+        hover:bg-purple-50 hover:scale-105
+        transition-all duration-200
+        shadow-sm hover:shadow-md
+        text-base sm:text-lg
       `}
-      draggable={isInteractive ? "true" : "false"}
-      onDragStart={(e) => {
-        if (!isInteractive) return;
-        e.currentTarget.classList.add('opacity-50');
-        e.dataTransfer.setData('text', object.id);
-        e.dataTransfer.effectAllowed = 'move';
-        onDragStart(object.id);
-      }}
-      onDragEnd={(e) => {
-        if (!isInteractive) return;
-        e.currentTarget.classList.remove('opacity-50');
-      }}
       style={{ color: object.color }}
     >
       {renderObjectIcon(object.geometry)}

@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Tower from './components/Tower';
 import GameControls from './components/GameControls';
+import GameSubmission from '../../GameSubmission';
+import { getGameNavigationInfo } from '../../../utils/gameNavigation';
 import { generateLevel, calculateOptimalMoves, getNextOptimalMove } from './utils/gameUtils';
 
 interface TowerPlanningGameProps {
-  onComplete?: (score: number) => void;
+  onComplete?: (metrics: any) => void;
 }
 
 type GamePhase = 'start' | 'playing' | 'complete';
@@ -29,13 +31,17 @@ export default function TowerPlanningGame({ onComplete }: TowerPlanningGameProps
     level: 1,
     score: 0,
     moves: 0,
-    minMoves: 7, // 2^n - 1 for n=3 disks
+    minMoves: 7,
     disks: [3, 2, 1],
-    towers: [[3, 2, 1], [], []], // Start with all disks on first tower
+    towers: [[3, 2, 1], [], []],
     selectedTower: null,
     hints: 3,
     timeElapsed: 0,
   });
+
+  const [metrics, setMetrics] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { nextGame, isLastGame } = getGameNavigationInfo('tower-planning');
 
   // Timer effect
   useEffect(() => {
@@ -89,14 +95,38 @@ export default function TowerPlanningGame({ onComplete }: TowerPlanningGameProps
         const levelScore = moveScore + timeScore;
 
         if (isComplete) {
-          onComplete?.(prev.score + levelScore);
+          const finalMetrics = {
+            Planning_Efficiency: {
+              value: moveScore,
+              timestamp: Date.now()
+            },
+            Task_Sustainability_Score: {
+              value: timeScore,
+              timestamp: Date.now()
+            },
+            Cognitive_Flexibility_Score: {
+              value: Math.min(100, (prev.hints / 3) * 100),
+              timestamp: Date.now()
+            },
+            Error_Correction_Speed: {
+              value: Math.max(0, 100 - (newMoves - prev.minMoves) * 20),
+              timestamp: Date.now()
+            },
+            Cognitive_Load_Handling_Score: {
+              value: levelScore,
+              timestamp: Date.now()
+            }
+          };
+          
+          setMetrics(finalMetrics);
+          
           return {
             ...prev,
             towers: newTowers,
             selectedTower: null,
             moves: newMoves,
             score: prev.score + levelScore,
-            phase: 'complete'
+            phase: 'complete' as const
           };
         }
 
@@ -111,7 +141,7 @@ export default function TowerPlanningGame({ onComplete }: TowerPlanningGameProps
       // Invalid move - just deselect
       return { ...prev, selectedTower: null };
     });
-  }, [onComplete]);
+  }, []);
 
   const handleHint = useCallback(() => {
     if (gameState.hints <= 0) return;
@@ -127,6 +157,12 @@ export default function TowerPlanningGame({ onComplete }: TowerPlanningGameProps
       };
     });
   }, []);
+
+  const handleSubmit = useCallback(() => {
+    if (onComplete && metrics) {
+      onComplete(metrics);
+    }
+  }, [onComplete, metrics]);
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -153,58 +189,27 @@ export default function TowerPlanningGame({ onComplete }: TowerPlanningGameProps
 
         {/* Game Area */}
         <div className="flex flex-col items-center gap-8">
-          <AnimatePresence mode="wait">
-            {gameState.phase === 'start' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-center"
-              >
-                <h2 className="text-2xl mb-4">Welcome to Tower of Planning</h2>
-                <p className="mb-8">Move all disks to the rightmost tower in the correct order.</p>
-                <button
-                  onClick={() => setGameState(prev => ({ ...prev, phase: 'playing' }))}
-                  className="px-8 py-3 bg-amber-600 hover:bg-amber-700 rounded-lg
-                           transition-colors duration-200 text-lg font-medium"
-                >
-                  Start Game
-                </button>
-              </motion.div>
-            )}
+          {gameState.phase === 'playing' && (
+            <div className="w-full">
+              <Tower
+                towers={gameState.towers}
+                selectedTower={gameState.selectedTower}
+                onTowerClick={handleTowerClick}
+              />
+            </div>
+          )}
 
-            {gameState.phase === 'playing' && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="w-full"
-              >
-                <Tower
-                  towers={gameState.towers}
-                  selectedTower={gameState.selectedTower}
-                  onTowerClick={handleTowerClick}
-                />
-              </motion.div>
-            )}
-
-            {gameState.phase === 'complete' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center"
-              >
-                <h2 className="text-3xl font-bold mb-4">Congratulations!</h2>
-                <div className="text-xl mb-8">Final Score: {gameState.score}</div>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="px-8 py-3 bg-amber-600 hover:bg-amber-700 rounded-lg
-                           transition-colors duration-200 text-lg font-medium"
-                >
-                  Play Again
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Game Submission */}
+          {metrics && (
+            <GameSubmission
+              isComplete={gameState.phase === 'complete'}
+              onSubmit={handleSubmit}
+              gameMetrics={metrics}
+              nextGame={nextGame?.id}
+              isLastGame={isLastGame}
+              currentGameId="tower-planning"
+            />
+          )}
         </div>
       </div>
     </div>
