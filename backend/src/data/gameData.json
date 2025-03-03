@@ -57,6 +57,25 @@
         "overall_confidence": "hard",
         "overall_percentile": "easy"
       }
+    },
+    "test_user_123": {
+      "userId": "test_user_123",
+      "strengths": [
+        "processing",
+        "attention",
+        "inhibition"
+      ],
+      "areas_for_improvement": [
+        "processing",
+        "attention",
+        "inhibition"
+      ],
+      "recommended_games": [],
+      "difficulty_levels": {
+        "inhibition": "hard",
+        "attention": "hard",
+        "processing": "hard"
+      }
     }
   },
   "userData": {},
@@ -74,6 +93,34 @@
       "score": 0,
       "timestamp": 1740805026017,
       "difficulty": "medium"
+    },
+    {
+      "userId": "test_user_123",
+      "gameId": "go-no-go",
+      "score": 0,
+      "timestamp": 1740896314096,
+      "difficulty": "medium"
+    },
+    {
+      "userId": "test_user_123",
+      "gameId": "go-no-go",
+      "score": 0,
+      "timestamp": 1740896802615,
+      "difficulty": "medium"
+    },
+    {
+      "userId": "test_user_123",
+      "gameId": "go-no-go",
+      "score": 85.5,
+      "timestamp": 1740896875768,
+      "difficulty": "medium"
+    },
+    {
+      "userId": "test_user_123",
+      "gameId": "go-no-go",
+      "score": 85.5,
+      "timestamp": 1740896888979,
+      "difficulty": "medium"
     }
   ],
   "gameProgress": {
@@ -82,6 +129,13 @@
         "level": 1,
         "completed": true,
         "score": 0
+      }
+    },
+    "test_user_123": {
+      "go-no-go": {
+        "level": 1,
+        "completed": true,
+        "score": 85.5
       }
     }
   }

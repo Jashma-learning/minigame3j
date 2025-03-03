@@ -1,0 +1,36 @@
+﻿{
+    "userId":  "test_user_456",
+    "metrics":  {
+                    "learning":  {
+                                     "learningRate":  75.5,
+                                     "performanceStability":  88,
+                                     "errorCorrectionSpeed":  82,
+                                     "adaptationQuality":  79.5
+                                 },
+                    "inhibition":  {
+                                       "noGoAccuracy":  90,
+                                       "accuracy":  85.5,
+                                       "goAccuracy":  82.5,
+                                       "falseAlarms":  2,
+                                       "missedGoes":  3
+                                   },
+                    "attention":  {
+                                      "sustainedAttention":  88.5,
+                                      "focusQuality":  82.5,
+                                      "attentionalLapses":  4,
+                                      "vigilanceLevel":  85
+                                  },
+                    "overall":  {
+                                    "performanceScore":  84.5,
+                                    "cognitiveFatigue":  25.5,
+                                    "consistencyIndex":  88.5,
+                                    "compositeScore":  82
+                                },
+                    "processing":  {
+                                       "reactionTimeVariability":  50.2,
+                                       "adaptiveControl":  85,
+                                       "averageReactionTime":  450.5,
+                                       "processingEfficiency":  78.5
+                                   }
+                }
+}

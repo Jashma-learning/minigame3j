@@ -1,0 +1,25 @@
+﻿{
+    "aggregateStats":  {
+                           "averageScores":  {
+                                                 "learning":  {
+
+                                                              },
+                                                 "inhibition":  {
+
+                                                                },
+                                                 "attention":  {
+
+                                                               },
+                                                 "overall":  {
+
+                                                             },
+                                                 "processing":  {
+
+                                                                }
+                                             },
+                           "totalAssessments":  0
+                       },
+    "users":  {
+
+              }
+}

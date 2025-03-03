@@ -1,0 +1,41 @@
+{
+  "users": {},
+  "aggregateStats": {
+    "totalAssessments": 0,
+    "averageScores": {
+      "inhibition": {
+        "accuracy": 0,
+        "noGoAccuracy": 0,
+        "goAccuracy": 0,
+        "falseAlarms": 0,
+        "missedGoes": 0
+      },
+      "attention": {
+        "sustainedAttention": 0,
+        "vigilanceLevel": 0,
+        "attentionalLapses": 0,
+        "focusQuality": 0
+      },
+      "processing": {
+        "averageReactionTime": 0,
+        "reactionTimeVariability": 0,
+        "processingEfficiency": 0,
+        "adaptiveControl": 0
+      },
+      "learning": {
+        "learningRate": 0,
+        "errorCorrectionSpeed": 0,
+        "adaptationQuality": 0,
+        "performanceStability": 0
+      },
+      "overall": {
+        "performanceScore": 0,
+        "cognitiveFatigue": 0,
+        "consistencyIndex": 0,
+        "compositeScore": 0
+      }
+    }
+  }
+}
+
+

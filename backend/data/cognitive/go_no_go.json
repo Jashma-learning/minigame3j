@@ -1,0 +1,537 @@
+{
+  "aggregateStats": {
+    "averageScores": {
+      "learning": {
+        "learningRate": 60.4,
+        "performanceStability": 87.3152680936172,
+        "errorCorrectionSpeed": 68.44333333333334,
+        "adaptationQuality": 78.6
+      },
+      "inhibition": {
+        "noGoAccuracy": 72,
+        "accuracy": 78.4,
+        "goAccuracy": 86,
+        "falseAlarms": 3.6,
+        "missedGoes": 2.4
+      },
+      "attention": {
+        "sustainedAttention": 90.8,
+        "focusQuality": 67.71255828524858,
+        "attentionalLapses": 3.6,
+        "vigilanceLevel": 74.87142857142857
+      },
+      "overall": {
+        "performanceScore": 87.6,
+        "cognitiveFatigue": 20.4,
+        "consistencyIndex": 90.8,
+        "compositeScore": 85.6
+      },
+      "processing": {
+        "reactionTimeVariability": 119.57859983656222,
+        "adaptiveControl": 78,
+        "averageReactionTime": 512.3,
+        "processingEfficiency": 261.2
+      }
+    },
+    "totalAssessments": 5
+  },
+  "users": {
+    "test_user_123": {
+      "assessments": [
+        {
+          "timestamp": 1740975666054,
+          "metrics": {
+            "inhibition": {
+              "accuracy": 85.5,
+              "noGoAccuracy": 90,
+              "goAccuracy": 82.5,
+              "falseAlarms": 2,
+              "missedGoes": 3
+            },
+            "attention": {
+              "sustainedAttention": 88.5,
+              "vigilanceLevel": 85,
+              "attentionalLapses": 4,
+              "focusQuality": 82.5
+            },
+            "processing": {
+              "averageReactionTime": 450.5,
+              "reactionTimeVariability": 50.2,
+              "processingEfficiency": 78.5,
+              "adaptiveControl": 85
+            },
+            "learning": {
+              "learningRate": 75.5,
+              "errorCorrectionSpeed": 82,
+              "adaptationQuality": 79.5,
+              "performanceStability": 88
+            },
+            "overall": {
+              "performanceScore": 84.5,
+              "cognitiveFatigue": 25.5,
+              "consistencyIndex": 88.5,
+              "compositeScore": 82
+            }
+          },
+          "sessionId": "gng_test_user_123_1740975666054",
+          "environmentFactors": {
+            "timeOfDay": 9,
+            "dayOfWeek": 1,
+            "completionTime": 0
+          }
+        },
+        {
+          "timestamp": 1740975780772,
+          "metrics": {
+            "inhibition": {
+              "accuracy": 85.5,
+              "noGoAccuracy": 90,
+              "goAccuracy": 82.5,
+              "falseAlarms": 2,
+              "missedGoes": 3
+            },
+            "attention": {
+              "sustainedAttention": 88.5,
+              "vigilanceLevel": 85,
+              "attentionalLapses": 4,
+              "focusQuality": 82.5
+            },
+            "processing": {
+              "averageReactionTime": 450.5,
+              "reactionTimeVariability": 50.2,
+              "processingEfficiency": 78.5,
+              "adaptiveControl": 85
+            },
+            "learning": {
+              "learningRate": 75.5,
+              "errorCorrectionSpeed": 82,
+              "adaptationQuality": 79.5,
+              "performanceStability": 88
+            },
+            "overall": {
+              "performanceScore": 84.5,
+              "cognitiveFatigue": 25.5,
+              "consistencyIndex": 88.5,
+              "compositeScore": 82
+            }
+          },
+          "sessionId": "gng_test_user_123_1740975780772",
+          "environmentFactors": {
+            "timeOfDay": 9,
+            "dayOfWeek": 1,
+            "completionTime": 0
+          }
+        },
+        {
+          "timestamp": 1740975849527,
+          "metrics": {
+            "inhibition": {
+              "accuracy": 85.5,
+              "noGoAccuracy": 90,
+              "goAccuracy": 82.5,
+              "falseAlarms": 2,
+              "missedGoes": 3
+            },
+            "attention": {
+              "sustainedAttention": 88.5,
+              "vigilanceLevel": 85,
+              "attentionalLapses": 4,
+              "focusQuality": 82.5
+            },
+            "processing": {
+              "averageReactionTime": 450.5,
+              "reactionTimeVariability": 50.2,
+              "processingEfficiency": 78.5,
+              "adaptiveControl": 85
+            },
+            "learning": {
+              "learningRate": 75.5,
+              "errorCorrectionSpeed": 82,
+              "adaptationQuality": 79.5,
+              "performanceStability": 88
+            },
+            "overall": {
+              "performanceScore": 84.5,
+              "cognitiveFatigue": 25.5,
+              "consistencyIndex": 88.5,
+              "compositeScore": 82
+            }
+          },
+          "sessionId": "gng_test_user_123_1740975849527",
+          "environmentFactors": {
+            "timeOfDay": 9,
+            "dayOfWeek": 1,
+            "completionTime": 0
+          }
+        },
+        {
+          "timestamp": 1740976246214,
+          "metrics": {
+            "inhibition": {
+              "accuracy": 85.5,
+              "noGoAccuracy": 90,
+              "goAccuracy": 82.5,
+              "falseAlarms": 2,
+              "missedGoes": 3
+            },
+            "attention": {
+              "sustainedAttention": 88.5,
+              "vigilanceLevel": 85,
+              "attentionalLapses": 4,
+              "focusQuality": 82.5
+            },
+            "processing": {
+              "averageReactionTime": 450.5,
+              "reactionTimeVariability": 50.2,
+              "processingEfficiency": 78.5,
+              "adaptiveControl": 85
+            },
+            "learning": {
+              "learningRate": 75.5,
+              "errorCorrectionSpeed": 82,
+              "adaptationQuality": 79.5,
+              "performanceStability": 88
+            },
+            "overall": {
+              "performanceScore": 84.5,
+              "cognitiveFatigue": 25.5,
+              "consistencyIndex": 88.5,
+              "compositeScore": 82
+            }
+          },
+          "sessionId": "gng_test_user_123_1740976246214",
+          "environmentFactors": {
+            "timeOfDay": 9,
+            "dayOfWeek": 1,
+            "completionTime": 0
+          }
+        },
+        {
+          "timestamp": 1740976692150,
+          "metrics": {
+            "inhibition": {
+              "accuracy": 50,
+              "noGoAccuracy": 0,
+              "goAccuracy": 100,
+              "falseAlarms": 10,
+              "missedGoes": 0
+            },
+            "attention": {
+              "sustainedAttention": 100,
+              "vigilanceLevel": 34.35714285714285,
+              "attentionalLapses": 2,
+              "focusQuality": 8.562791426242867
+            },
+            "processing": {
+              "averageReactionTime": 759.5,
+              "reactionTimeVariability": 397.09299918281107,
+              "processingEfficiency": 991.9999999999999,
+              "adaptiveControl": 50
+            },
+            "learning": {
+              "learningRate": 0,
+              "errorCorrectionSpeed": 14.216666666666669,
+              "adaptationQuality": 75,
+              "performanceStability": 84.576340468086
+            },
+            "overall": {
+              "performanceScore": 100,
+              "cognitiveFatigue": 0,
+              "consistencyIndex": 100,
+              "compositeScore": 100
+            }
+          },
+          "sessionId": "gng_test_user_123_1740976692150",
+          "environmentFactors": {
+            "timeOfDay": 10,
+            "dayOfWeek": 1,
+            "completionTime": 0
+          }
+        }
+      ],
+      "cognitiveProfile": {
+        "inhibition": {
+          "baseline": {
+            "accuracy": 85.5,
+            "noGoAccuracy": 90,
+            "goAccuracy": 82.5,
+            "falseAlarms": 2,
+            "missedGoes": 3
+          },
+          "trend": [
+            {
+              "timestamp": 1740975666054,
+              "metrics": {
+                "accuracy": 85.5,
+                "noGoAccuracy": 90,
+                "goAccuracy": 82.5,
+                "falseAlarms": 2,
+                "missedGoes": 3
+              }
+            },
+            {
+              "timestamp": 1740975780772,
+              "metrics": {
+                "accuracy": 85.5,
+                "noGoAccuracy": 90,
+                "goAccuracy": 82.5,
+                "falseAlarms": 2,
+                "missedGoes": 3
+              }
+            },
+            {
+              "timestamp": 1740975849527,
+              "metrics": {
+                "accuracy": 85.5,
+                "noGoAccuracy": 90,
+                "goAccuracy": 82.5,
+                "falseAlarms": 2,
+                "missedGoes": 3
+              }
+            },
+            {
+              "timestamp": 1740976246214,
+              "metrics": {
+                "accuracy": 85.5,
+                "noGoAccuracy": 90,
+                "goAccuracy": 82.5,
+                "falseAlarms": 2,
+                "missedGoes": 3
+              }
+            },
+            {
+              "timestamp": 1740976692150,
+              "metrics": {
+                "accuracy": 50,
+                "noGoAccuracy": 0,
+                "goAccuracy": 100,
+                "falseAlarms": 10,
+                "missedGoes": 0
+              }
+            }
+          ]
+        },
+        "attention": {
+          "baseline": {
+            "sustainedAttention": 88.5,
+            "vigilanceLevel": 85,
+            "attentionalLapses": 4,
+            "focusQuality": 82.5
+          },
+          "trend": [
+            {
+              "timestamp": 1740975666054,
+              "metrics": {
+                "sustainedAttention": 88.5,
+                "vigilanceLevel": 85,
+                "attentionalLapses": 4,
+                "focusQuality": 82.5
+              }
+            },
+            {
+              "timestamp": 1740975780772,
+              "metrics": {
+                "sustainedAttention": 88.5,
+                "vigilanceLevel": 85,
+                "attentionalLapses": 4,
+                "focusQuality": 82.5
+              }
+            },
+            {
+              "timestamp": 1740975849527,
+              "metrics": {
+                "sustainedAttention": 88.5,
+                "vigilanceLevel": 85,
+                "attentionalLapses": 4,
+                "focusQuality": 82.5
+              }
+            },
+            {
+              "timestamp": 1740976246214,
+              "metrics": {
+                "sustainedAttention": 88.5,
+                "vigilanceLevel": 85,
+                "attentionalLapses": 4,
+                "focusQuality": 82.5
+              }
+            },
+            {
+              "timestamp": 1740976692150,
+              "metrics": {
+                "sustainedAttention": 100,
+                "vigilanceLevel": 34.35714285714285,
+                "attentionalLapses": 2,
+                "focusQuality": 8.562791426242867
+              }
+            }
+          ]
+        },
+        "processing": {
+          "baseline": {
+            "averageReactionTime": 450.5,
+            "reactionTimeVariability": 50.2,
+            "processingEfficiency": 78.5,
+            "adaptiveControl": 85
+          },
+          "trend": [
+            {
+              "timestamp": 1740975666054,
+              "metrics": {
+                "averageReactionTime": 450.5,
+                "reactionTimeVariability": 50.2,
+                "processingEfficiency": 78.5,
+                "adaptiveControl": 85
+              }
+            },
+            {
+              "timestamp": 1740975780772,
+              "metrics": {
+                "averageReactionTime": 450.5,
+                "reactionTimeVariability": 50.2,
+                "processingEfficiency": 78.5,
+                "adaptiveControl": 85
+              }
+            },
+            {
+              "timestamp": 1740975849527,
+              "metrics": {
+                "averageReactionTime": 450.5,
+                "reactionTimeVariability": 50.2,
+                "processingEfficiency": 78.5,
+                "adaptiveControl": 85
+              }
+            },
+            {
+              "timestamp": 1740976246214,
+              "metrics": {
+                "averageReactionTime": 450.5,
+                "reactionTimeVariability": 50.2,
+                "processingEfficiency": 78.5,
+                "adaptiveControl": 85
+              }
+            },
+            {
+              "timestamp": 1740976692150,
+              "metrics": {
+                "averageReactionTime": 759.5,
+                "reactionTimeVariability": 397.09299918281107,
+                "processingEfficiency": 991.9999999999999,
+                "adaptiveControl": 50
+              }
+            }
+          ]
+        },
+        "learning": {
+          "baseline": {
+            "learningRate": 75.5,
+            "errorCorrectionSpeed": 82,
+            "adaptationQuality": 79.5,
+            "performanceStability": 88
+          },
+          "trend": [
+            {
+              "timestamp": 1740975666054,
+              "metrics": {
+                "learningRate": 75.5,
+                "errorCorrectionSpeed": 82,
+                "adaptationQuality": 79.5,
+                "performanceStability": 88
+              }
+            },
+            {
+              "timestamp": 1740975780772,
+              "metrics": {
+                "learningRate": 75.5,
+                "errorCorrectionSpeed": 82,
+                "adaptationQuality": 79.5,
+                "performanceStability": 88
+              }
+            },
+            {
+              "timestamp": 1740975849527,
+              "metrics": {
+                "learningRate": 75.5,
+                "errorCorrectionSpeed": 82,
+                "adaptationQuality": 79.5,
+                "performanceStability": 88
+              }
+            },
+            {
+              "timestamp": 1740976246214,
+              "metrics": {
+                "learningRate": 75.5,
+                "errorCorrectionSpeed": 82,
+                "adaptationQuality": 79.5,
+                "performanceStability": 88
+              }
+            },
+            {
+              "timestamp": 1740976692150,
+              "metrics": {
+                "learningRate": 0,
+                "errorCorrectionSpeed": 14.216666666666669,
+                "adaptationQuality": 75,
+                "performanceStability": 84.576340468086
+              }
+            }
+          ]
+        },
+        "overall": {
+          "baseline": {
+            "performanceScore": 84.5,
+            "cognitiveFatigue": 25.5,
+            "consistencyIndex": 88.5,
+            "compositeScore": 82
+          },
+          "trend": [
+            {
+              "timestamp": 1740975666054,
+              "metrics": {
+                "performanceScore": 84.5,
+                "cognitiveFatigue": 25.5,
+                "consistencyIndex": 88.5,
+                "compositeScore": 82
+              }
+            },
+            {
+              "timestamp": 1740975780772,
+              "metrics": {
+                "performanceScore": 84.5,
+                "cognitiveFatigue": 25.5,
+                "consistencyIndex": 88.5,
+                "compositeScore": 82
+              }
+            },
+            {
+              "timestamp": 1740975849527,
+              "metrics": {
+                "performanceScore": 84.5,
+                "cognitiveFatigue": 25.5,
+                "consistencyIndex": 88.5,
+                "compositeScore": 82
+              }
+            },
+            {
+              "timestamp": 1740976246214,
+              "metrics": {
+                "performanceScore": 84.5,
+                "cognitiveFatigue": 25.5,
+                "consistencyIndex": 88.5,
+                "compositeScore": 82
+              }
+            },
+            {
+              "timestamp": 1740976692150,
+              "metrics": {
+                "performanceScore": 100,
+                "cognitiveFatigue": 0,
+                "consistencyIndex": 100,
+                "compositeScore": 100
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

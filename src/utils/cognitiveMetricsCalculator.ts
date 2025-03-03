@@ -1,102 +1,126 @@
-import { BaseMetric } from '../types/cognitiveMetrics';
+import { BaseMetric, CognitiveMetrics } from '../types/cognitive/metrics.types';
 
-export interface CognitiveMetricResult {
-  value: number;
-  weight: number;
-}
-
-interface MetricCalculator {
-  [key: string]: (gameMetrics: Record<string, BaseMetric>) => CognitiveMetricResult;
-}
-
-// Cognitive domains and their associated game metrics
-const cognitiveMetricCalculators: Record<string, MetricCalculator> = {
-  memory: {
-    'working_memory': (metrics) => ({
-      value: metrics.Working_Memory_Span?.value || 0,
-      weight: 1.0
-    }),
-    'short_term_memory': (metrics) => ({
-      value: metrics.Short_Term_Memory_Retention?.value || 0,
-      weight: 1.0
-    }),
-    'memory_recall': (metrics) => ({
-      value: metrics.Memory_Recall_Accuracy?.value || 0,
-      weight: 1.0
-    })
-  },
-  attention: {
-    'sustained_attention': (metrics) => ({
-      value: metrics.Sustained_Attention_Duration?.value || 0,
-      weight: 1.0
-    }),
-    'selective_attention': (metrics) => ({
-      value: metrics.Selective_Attention_Score?.value || 0,
-      weight: 1.0
-    }),
-    'divided_attention': (metrics) => ({
-      value: metrics.Dual_Task_Performance?.value || 0,
-      weight: 1.0
-    })
-  },
-  processing: {
-    'processing_speed': (metrics) => ({
-      value: metrics.Information_Processing_Speed?.value || 0,
-      weight: 1.0
-    }),
-    'reaction_time': (metrics) => ({
-      value: metrics.Reaction_Time?.value || 0,
-      weight: 1.0
-    })
-  },
-  executive: {
-    'planning': (metrics) => ({
-      value: metrics.Planning_Efficiency?.value || 0,
-      weight: 1.0
-    }),
-    'cognitive_flexibility': (metrics) => ({
-      value: metrics.Cognitive_Flexibility_Score?.value || 0,
-      weight: 1.0
-    }),
-    'inhibitory_control': (metrics) => ({
-      value: metrics.Impulse_Control_Score?.value || 0,
-      weight: 1.0
-    })
-  },
-  spatial: {
-    'spatial_awareness': (metrics) => ({
-      value: metrics.Spatial_Rotation_Accuracy?.value || 0,
-      weight: 1.0
-    }),
-    'navigation': (metrics) => ({
-      value: metrics.Navigation_Error_Rate?.value || 0,
-      weight: 1.0
-    }),
-    'spatial_memory': (metrics) => ({
-      value: metrics.Spatial_Problem_Solving?.value || 0,
-      weight: 1.0
-    })
+export const calculateCognitiveMetrics = (metrics: BaseMetric[]): CognitiveMetrics => {
+  if (metrics.length === 0) {
+    return {
+      memory: {
+        accuracy: 0,
+        reactionTime: 0,
+        span: 0,
+        errorRate: 0
+      },
+      attention: {
+        focusScore: 0,
+        consistency: 0,
+        deliberationTime: 0
+      },
+      processing: {
+        cognitiveLoad: 0,
+        processingSpeed: 0,
+        efficiency: 0
+      },
+      overall: {
+        performanceScore: 0,
+        confidenceLevel: 0,
+        percentileRank: 0
+      }
+    };
   }
+
+  // Calculate basic statistics
+  const values = metrics.map(m => m.value);
+  const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+  const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+  const std = Math.sqrt(variance);
+
+  // Calculate time-based metrics
+  const timeSpan = metrics[metrics.length - 1].timestamp - metrics[0].timestamp;
+  const averageInterval = timeSpan / (metrics.length - 1);
+
+  // Memory metrics
+  const memory = {
+    accuracy: calculateAccuracy(values),
+    reactionTime: averageInterval,
+    span: metrics.length,
+    errorRate: calculateErrorRate(values)
+  };
+
+  // Attention metrics
+  const attention = {
+    focusScore: calculateFocusScore(values, timeSpan),
+    consistency: calculateConsistency(values, mean, std),
+    deliberationTime: averageInterval
+  };
+
+  // Processing metrics
+  const processing = {
+    cognitiveLoad: calculateCognitiveLoad(values, timeSpan),
+    processingSpeed: 1000 / averageInterval, // Responses per second
+    efficiency: calculateEfficiency(values, timeSpan)
+  };
+
+  // Overall metrics
+  const overall = {
+    performanceScore: calculatePerformanceScore(memory, attention, processing),
+    confidenceLevel: calculateConfidenceLevel(values, mean, std),
+    percentileRank: 50 // Default to median, would need population data for true percentile
+  };
+
+  return {
+    memory,
+    attention,
+    processing,
+    overall
+  };
 };
 
-export function calculateCognitiveMetrics(
-  gameMetrics: Record<string, BaseMetric>
-): Record<string, number> {
-  const cognitiveScores: Record<string, number> = {};
+// Helper functions for metric calculations
+const calculateAccuracy = (values: number[]): number => {
+  const correctResponses = values.filter(v => v > 0).length;
+  return (correctResponses / values.length) * 100;
+};
 
-  // Calculate scores for each cognitive domain
-  Object.entries(cognitiveMetricCalculators).forEach(([domain, calculators]) => {
-    let totalScore = 0;
-    let totalWeight = 0;
+const calculateErrorRate = (values: number[]): number => {
+  const errors = values.filter(v => v < 0).length;
+  return (errors / values.length) * 100;
+};
 
-    Object.entries(calculators).forEach(([_, calculator]) => {
-      const result = calculator(gameMetrics);
-      totalScore += result.value * result.weight;
-      totalWeight += result.weight;
-    });
+const calculateFocusScore = (values: number[], timeSpan: number): number => {
+  const consistencyFactor = 1 - (Math.abs(Math.max(...values) - Math.min(...values)) / Math.max(...values));
+  const timeFactor = Math.min(1, timeSpan / (5 * 60 * 1000)); // Normalize to 5 minutes
+  return (consistencyFactor * 0.7 + timeFactor * 0.3) * 100;
+};
 
-    cognitiveScores[domain] = totalWeight > 0 ? totalScore / totalWeight : 0;
-  });
+const calculateConsistency = (values: number[], mean: number, std: number): number => {
+  const cv = std / mean; // Coefficient of variation
+  return Math.max(0, (1 - cv) * 100);
+};
 
-  return cognitiveScores;
-} 
+const calculateCognitiveLoad = (values: number[], timeSpan: number): number => {
+  const complexity = Math.log(values.length) / Math.log(2); // Log base 2 of number of responses
+  const timePressure = Math.min(1, timeSpan / (5 * 60 * 1000)); // Normalize to 5 minutes
+  return (complexity * 0.6 + timePressure * 0.4) * 100;
+};
+
+const calculateEfficiency = (values: number[], timeSpan: number): number => {
+  const correctResponses = values.filter(v => v > 0).length;
+  const responsesPerSecond = correctResponses / (timeSpan / 1000);
+  return Math.min(100, responsesPerSecond * 20); // Scale to 0-100
+};
+
+const calculatePerformanceScore = (
+  memory: CognitiveMetrics['memory'],
+  attention: CognitiveMetrics['attention'],
+  processing: CognitiveMetrics['processing']
+): number => {
+  return (
+    memory.accuracy * 0.3 +
+    attention.focusScore * 0.3 +
+    processing.efficiency * 0.4
+  );
+};
+
+const calculateConfidenceLevel = (values: number[], mean: number, std: number): number => {
+  const zScore = Math.abs(mean / (std || 1)); // Z-score from standard normal distribution
+  return Math.min(100, zScore * 25); // Scale to 0-100
+}; 

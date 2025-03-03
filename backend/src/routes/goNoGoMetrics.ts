@@ -5,53 +5,9 @@ import { GoNoGoMetrics } from '../types/cognitive/goNoGo.types';
 import { CognitiveProfile } from '../types/cognitive/shared.types';
 import { COGNITIVE_DATA_DIR, ensureCognitiveDirectory } from '../utils/fileSystem';
 import { calculateMeanGoNoGo, calculateProgressGoNoGo, calculatePercentileRankingGoNoGo } from '../utils/goNoGoMetricCalculations';
-import { MetricValue, AttentionMetrics, ProcessingMetrics, OverallMetrics } from '../types/cognitive/metrics.types';
 
-// Type definitions for metrics
-interface CognitiveMetrics {
-  memory: MetricValue;
-  attention: AttentionMetrics;
-  processing: ProcessingMetrics;
-  overall: OverallMetrics;
-}
-
-interface EnvironmentFactors {
-  timeOfDay: number;
-  dayOfWeek: number;
-  completionTime: number;
-}
-
-interface Assessment {
-  timestamp: number;
-  metrics: CognitiveMetrics;
-  sessionId: string;
-  environmentFactors: EnvironmentFactors;
-}
-
-interface UserProfile {
-  assessments: Assessment[];
-  cognitiveProfile: {
-    memory: CognitiveProfile;
-    attention: CognitiveProfile;
-    processing: CognitiveProfile;
-    overall: CognitiveProfile;
-  };
-}
-
-interface AggregateStats {
-  totalAssessments: number;
-  averageScores: {
-    memory: MetricValue;
-    attention: AttentionMetrics;
-    processing: ProcessingMetrics;
-    overall: OverallMetrics;
-  };
-}
-
-interface MemoryMatchData {
-  users: Record<string, UserProfile>;
-  aggregateStats: AggregateStats;
-}
+const router = express.Router();
+const GO_NO_GO_FILE = path.join(COGNITIVE_DATA_DIR, 'go_no_go.json');
 
 // Go/No-Go Data Structure
 interface GoNoGoData {
@@ -85,204 +41,6 @@ interface GoNoGoData {
     };
   };
 }
-
-const router = express.Router();
-const MEMORY_MATCH_FILE = path.join(COGNITIVE_DATA_DIR, 'memory_match.json');
-const GO_NO_GO_FILE = path.join(COGNITIVE_DATA_DIR, 'go_no_go.json');
-
-// Read memory match data
-const readMemoryMatchData = async (): Promise<MemoryMatchData> => {
-  try {
-    await ensureCognitiveDirectory();
-    
-    try {
-      const data = await fs.promises.readFile(MEMORY_MATCH_FILE, 'utf8');
-      return JSON.parse(data);
-    } catch (error) {
-      // If file doesn't exist or is invalid, return initial structure
-      const initialData: MemoryMatchData = {
-        users: {},
-        aggregateStats: {
-          totalAssessments: 0,
-          averageScores: {
-            memory: { accuracy: 0, reactionTime: 0, span: 0, errorRate: 0 },
-            attention: { focusScore: 0, consistency: 0, deliberationTime: 0 },
-            processing: { cognitiveLoad: 0, processingSpeed: 0, efficiency: 0 },
-            overall: { performanceScore: 0, confidenceLevel: 0, percentileRank: 0 }
-          }
-        }
-      };
-      
-      // Create file with initial structure
-      await writeMemoryMatchData(initialData);
-      return initialData;
-    }
-  } catch (error) {
-    console.error('Error reading memory match data:', error);
-    throw error;
-  }
-};
-
-// Write memory match data
-const writeMemoryMatchData = async (data: MemoryMatchData): Promise<void> => {
-  try {
-    await ensureCognitiveDirectory();
-    await fs.promises.writeFile(
-      MEMORY_MATCH_FILE,
-      JSON.stringify(data, null, 2),
-      { encoding: 'utf8', flag: 'w' }
-    );
-  } catch (error) {
-    console.error('Error writing memory match data:', error);
-    throw error;
-  }
-};
-
-// Type guard for metrics validation
-const isMetricCategory = (category: string): category is keyof CognitiveMetrics => {
-  return ['memory', 'attention', 'processing', 'overall'].includes(category);
-};
-
-// Type guards for each metric category
-const isMemoryMetrics = (metrics: unknown): metrics is MetricValue => {
-  const m = metrics as MetricValue;
-  return typeof m?.accuracy === 'number' && 
-         typeof m?.reactionTime === 'number' && 
-         typeof m?.span === 'number' && 
-         typeof m?.errorRate === 'number';
-};
-
-const isAttentionMetrics = (metrics: unknown): metrics is AttentionMetrics => {
-  const m = metrics as AttentionMetrics;
-  return typeof m?.focusScore === 'number' && 
-         typeof m?.consistency === 'number' && 
-         typeof m?.deliberationTime === 'number';
-};
-
-const isProcessingMetrics = (metrics: unknown): metrics is ProcessingMetrics => {
-  const m = metrics as ProcessingMetrics;
-  return typeof m?.cognitiveLoad === 'number' && 
-         typeof m?.processingSpeed === 'number' && 
-         typeof m?.efficiency === 'number';
-};
-
-const isOverallMetrics = (metrics: unknown): metrics is OverallMetrics => {
-  const m = metrics as OverallMetrics;
-  return typeof m?.performanceScore === 'number' && 
-         typeof m?.confidenceLevel === 'number' && 
-         typeof m?.percentileRank === 'number';
-};
-
-// Validate metrics structure
-const validateMetrics = (metrics: unknown): metrics is CognitiveMetrics => {
-  if (typeof metrics !== 'object' || metrics === null) return false;
-  
-  const m = metrics as CognitiveMetrics;
-  return isMemoryMetrics(m.memory) &&
-         isAttentionMetrics(m.attention) &&
-         isProcessingMetrics(m.processing) &&
-         isOverallMetrics(m.overall);
-};
-
-// Route handler for storing memory match metrics
-router.post('/metrics/memory-match', async (req: Request, res: Response) => {
-  try {
-    console.log('Received memory match metrics request');
-    console.log('Request headers:', req.headers);
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-
-    const { userId, metrics } = req.body;
-
-    // Validate required fields
-    if (!userId || !metrics) {
-      console.error('Missing required fields:', { userId: !!userId, metrics: !!metrics });
-      return res.status(400).json({
-        error: 'Missing required fields',
-        details: {
-          userId: !!userId,
-          metrics: !!metrics
-        }
-      });
-    }
-
-    // Validate metrics structure
-    if (!validateMetrics(metrics)) {
-      console.error('Invalid metrics format:', metrics);
-      return res.status(400).json({
-        error: 'Invalid metrics format',
-        details: {
-          hasMemory: !!metrics.memory,
-          hasAttention: !!metrics.attention,
-          hasProcessing: !!metrics.processing,
-          hasOverall: !!metrics.overall,
-          metrics: metrics
-        }
-      });
-    }
-
-    const data = await readMemoryMatchData();
-
-    // Initialize user data if not exists
-    if (!data.users[userId]) {
-      data.users[userId] = {
-        assessments: [],
-        cognitiveProfile: {
-          memory: { baseline: null, trend: [] },
-          attention: { baseline: null, trend: [] },
-          processing: { baseline: null, trend: [] },
-          overall: { baseline: null, trend: [] }
-        }
-      };
-    }
-
-    // Create assessment
-    const assessment: Assessment = {
-      timestamp: Date.now(),
-      metrics,
-      sessionId: `mm_${userId}_${Date.now()}`,
-      environmentFactors: {
-        timeOfDay: new Date().getHours(),
-        dayOfWeek: new Date().getDay(),
-        completionTime: metrics.memory.reactionTime * metrics.memory.span
-      }
-    };
-
-    // Add assessment to user's data
-    data.users[userId].assessments.push(assessment);
-    
-    // Update baseline if first assessment
-    if (!data.users[userId].cognitiveProfile.memory.baseline) {
-      Object.keys(data.users[userId].cognitiveProfile).forEach(category => {
-        if (isMetricCategory(category)) {
-          data.users[userId].cognitiveProfile[category].baseline = metrics;
-        }
-      });
-    }
-
-    // Update trends
-    Object.entries(metrics).forEach(([category, categoryMetrics]) => {
-      if (isMetricCategory(category)) {
-        data.users[userId].cognitiveProfile[category].trend.push({
-          timestamp: Date.now(),
-          metrics: categoryMetrics
-        });
-      }
-    });
-
-    // Write data
-    await writeMemoryMatchData(data);
-
-    res.json({ 
-      message: 'Memory match metrics stored successfully',
-      assessmentId: assessment.sessionId
-    });
-  } catch (error) {
-    console.error('Error storing memory match metrics:', error);
-    res.status(500).json({
-      error: 'Failed to store memory match metrics'
-    });
-  }
-});
 
 // Read Go/No-Go data from JSON file
 const readGoNoGoData = async (): Promise<GoNoGoData> => {
@@ -322,15 +80,6 @@ const readGoNoGoData = async (): Promise<GoNoGoData> => {
 const writeGoNoGoData = async (data: GoNoGoData): Promise<void> => {
   try {
     await ensureCognitiveDirectory();
-    console.log('Ensuring cognitive directory exists for write');
-    console.log('Ensuring cognitive directory exists at:', COGNITIVE_DATA_DIR);
-    if (!fs.existsSync(COGNITIVE_DATA_DIR)) {
-      console.log('Creating cognitive directory');
-      fs.mkdirSync(COGNITIVE_DATA_DIR, { recursive: true });
-    } else {
-      console.log('Cognitive directory already exists');
-    }
-    console.log('Writing data to file');
     await fs.promises.writeFile(GO_NO_GO_FILE, JSON.stringify(data, null, 2));
     console.log('Successfully wrote Go/No-Go data to file');
   } catch (error) {
@@ -393,7 +142,7 @@ const calculateGoNoGoProfile = (assessments: GoNoGoData['users'][string]['assess
 };
 
 // Route handler for storing Go/No-Go metrics
-router.post('/metrics/go-no-go', async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     console.log('Received Go/No-Go metrics request:', {
       body: req.body,
@@ -487,7 +236,7 @@ router.post('/metrics/go-no-go', async (req: Request, res: Response) => {
 });
 
 // Route handler for retrieving Go/No-Go cognitive profile
-router.get('/metrics/go-no-go/profile/:userId', async (req: Request, res: Response) => {
+router.get('/profile/:userId', async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const data = await readGoNoGoData();
@@ -530,17 +279,6 @@ router.get('/metrics/go-no-go/profile/:userId', async (req: Request, res: Respon
       success: false,
       error: 'Failed to retrieve Go/No-Go profile'
     });
-  }
-});
-
-// Simple test endpoint
-router.post('/test', async (req: Request, res: Response) => {
-  try {
-    console.log('Test endpoint hit:', req.body);
-    res.status(200).json({ message: 'Test successful', received: req.body });
-  } catch (error) {
-    console.error('Test endpoint error:', error);
-    res.status(500).json({ error: 'Test failed' });
   }
 });
 

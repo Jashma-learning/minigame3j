@@ -18,70 +18,94 @@ export interface MemoryMatchGameState {
   matchTimes: number[];
 }
 
-/**
- * Comprehensive cognitive metrics for memory assessment
- */
+// Base metric types for cognitive assessments
+export interface BaseMetric {
+  timestamp: number;
+  value: number;
+}
+
+// Memory Match Game Metrics
 export interface MemoryMatchMetrics {
-  /** Core Memory Metrics */
   memory: {
-    /** Percentage of correct matches (0-100) */
     accuracy: number;
-    
-    /** Average time to make successful matches (seconds) */
     reactionTime: number;
-    
-    /** Total number of cards successfully remembered */
     span: number;
-    
-    /** Percentage of incorrect matches (0-100) */
     errorRate: number;
   };
-
-  /** Attention Metrics */
   attention: {
-    /** Overall focus score (0-100) */
     focusScore: number;
-    
-    /** Consistency in response times (0-100, higher is more consistent) */
     consistency: number;
-    
-    /** Time spent analyzing cards before making decisions (seconds) */
     deliberationTime: number;
   };
-
-  /** Cognitive Processing */
   processing: {
-    /** Mental effort required (0-100) */
     cognitiveLoad: number;
-    
-    /** Speed of visual processing (matches per minute) */
     processingSpeed: number;
-    
-    /** Efficiency of matching strategy (0-100) */
     efficiency: number;
   };
-
-  /** Performance Trends */
-  trends: {
-    /** Change in accuracy over time (-100 to 100) */
+  trends?: {
     accuracyTrend: number;
-    
-    /** Change in speed over time (-100 to 100) */
     speedTrend: number;
-    
-    /** Learning curve steepness (0-100) */
     learningRate: number;
   };
-
-  /** Overall Assessment */
   overall: {
-    /** Composite cognitive performance score (0-100) */
     performanceScore: number;
-    
-    /** Confidence level in the assessment (0-100) */
     confidenceLevel: number;
-    
-    /** Relative percentile ranking (1-100) */
     percentileRank: number;
+  };
+}
+
+// API response types
+export interface MemoryMatchMetricsResponse {
+  message: string;
+  assessmentId: string;
+}
+
+export interface MemoryMatchProfileResponse {
+  cognitiveProfile: {
+    memory: {
+      baseline: MemoryMatchMetrics | null;
+      trend: Array<{
+        timestamp: number;
+        metrics: MemoryMatchMetrics;
+      }>;
+    };
+    attention: {
+      baseline: MemoryMatchMetrics | null;
+      trend: Array<{
+        timestamp: number;
+        metrics: MemoryMatchMetrics;
+      }>;
+    };
+    processing: {
+      baseline: MemoryMatchMetrics | null;
+      trend: Array<{
+        timestamp: number;
+        metrics: MemoryMatchMetrics;
+      }>;
+    };
+    overall: {
+      baseline: MemoryMatchMetrics | null;
+      trend: Array<{
+        timestamp: number;
+        metrics: MemoryMatchMetrics;
+      }>;
+    };
+  };
+  recentAssessments: Array<{
+    timestamp: number;
+    metrics: MemoryMatchMetrics;
+    sessionId: string;
+  }>;
+  progress: {
+    memory: { improvement: number; consistency: number };
+    attention: { improvement: number; consistency: number };
+    processing: { improvement: number; consistency: number };
+    overall: { improvement: number; consistency: number };
+  };
+  percentileRanking: {
+    memory: Record<string, number>;
+    attention: Record<string, number>;
+    processing: Record<string, number>;
+    overall: Record<string, number>;
   };
 } 

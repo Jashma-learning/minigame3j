@@ -7,6 +7,7 @@ import { useGameProgress } from '../../../contexts/GameProgressContext';
 import { getNextGame } from '../../../utils/gameSeriesConfig';
 import { MemoryMatchGameState, MemoryMatchMetrics } from '../../../types/cognitive/memoryMatch.types';
 import { calculateMemoryMatchMetrics, calculateMatchTime } from './MemoryMatch.utils';
+import { memoryMatchService } from '../../../services/memoryMatchService';
 
 // Game icons (emojis) for cards
 const ICONS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'];
@@ -147,7 +148,7 @@ const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onComplete }) => {
 
   const endGame = async () => {
     try {
-      setGameStarted(false);
+    setGameStarted(false);
       setIsGameComplete(true);
 
       // Calculate final metrics
@@ -196,93 +197,41 @@ const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onComplete }) => {
 
       console.log('Starting endGame process...');
 
-      // First test basic connectivity
-      const testResponse = await fetch('http://localhost:3001/api/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+      // First test the connection
+      await memoryMatchService.testConnection();
+      console.log('Backend connection test successful');
+
+      // Store the metrics
+      const result = await memoryMatchService.storeMetrics('test_user_123', {
+        memory: {
+          accuracy: Math.max(0, Math.min(100, metrics.memory.accuracy)),
+          reactionTime: Math.max(0, metrics.memory.reactionTime),
+          span: metrics.memory.span,
+          errorRate: Math.max(0, Math.min(100, metrics.memory.errorRate))
         },
-        body: JSON.stringify({ test: true })
+        attention: {
+          focusScore: Math.max(0, Math.min(100, metrics.attention.focusScore)),
+          consistency: Math.max(0, Math.min(100, metrics.attention.consistency)),
+          deliberationTime: Math.max(0, metrics.attention.deliberationTime)
+        },
+        processing: {
+          cognitiveLoad: Math.max(0, Math.min(100, metrics.processing.cognitiveLoad)),
+          processingSpeed: Math.max(0, metrics.processing.processingSpeed),
+          efficiency: Math.max(0, Math.min(100, metrics.processing.efficiency))
+        },
+        trends: {
+          accuracyTrend: 0, // These will be calculated on the backend
+          speedTrend: 0,
+          learningRate: 0
+        },
+        overall: {
+          performanceScore: Math.max(0, Math.min(100, metrics.overall.performanceScore)),
+          confidenceLevel: Math.max(0, Math.min(100, metrics.overall.confidenceLevel)),
+          percentileRank: Math.max(0, Math.min(100, metrics.overall.percentileRank))
+        }
       });
 
-      if (!testResponse.ok) {
-        throw new Error(`Test request failed: ${testResponse.statusText}`);
-      }
-
-      console.log('Test endpoint successful, proceeding with metrics');
-
-      // Now send the actual metrics
-      console.log('Sending metrics to backend...');
-      try {
-        const response = await fetch('http://localhost:3001/api/metrics/memory-match', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({
-            userId: 'test_user_123',
-            metrics: {
-              memory: {
-                accuracy: Math.max(0, Math.min(100, metrics.memory.accuracy)),
-                reactionTime: Math.max(0, metrics.memory.reactionTime),
-                span: metrics.memory.span,
-                errorRate: Math.max(0, Math.min(100, metrics.memory.errorRate))
-              },
-              attention: {
-                focusScore: Math.max(0, Math.min(100, metrics.attention.focusScore)),
-                consistency: Math.max(0, Math.min(100, metrics.attention.consistency)),
-                deliberationTime: Math.max(0, metrics.attention.deliberationTime)
-              },
-              processing: {
-                cognitiveLoad: Math.max(0, Math.min(100, metrics.processing.cognitiveLoad)),
-                processingSpeed: Math.max(0, metrics.processing.processingSpeed),
-                efficiency: Math.max(0, Math.min(100, metrics.processing.efficiency))
-              },
-              overall: {
-                performanceScore: Math.max(0, Math.min(100, metrics.overall.performanceScore)),
-                confidenceLevel: Math.max(0, Math.min(100, metrics.overall.confidenceLevel)),
-                percentileRank: Math.max(0, Math.min(100, metrics.overall.percentileRank))
-              }
-            }
-          })
-        });
-
-        const responseText = await response.text();
-        console.log('Raw response:', responseText);
-
-        if (!response.ok) {
-          let errorData = {};
-          try {
-            errorData = responseText ? JSON.parse(responseText) : {};
-          } catch (e) {
-            console.error('Failed to parse error response:', e);
-          }
-          
-          console.error('Failed to store metrics:', {
-            status: response.status,
-            statusText: response.statusText,
-            error: errorData,
-            responseText
-          });
-          
-          throw new Error(`Failed to store metrics: ${response.status} ${response.statusText}`);
-        }
-
-        let result = {};
-        try {
-          result = responseText ? JSON.parse(responseText) : {};
-        } catch (e) {
-          console.error('Failed to parse success response:', e);
-        }
-
-        console.log('Metrics stored successfully:', result);
-
-      } catch (error) {
-        console.error('Network or parsing error:', error);
-        throw error;
-      }
+      console.log('Metrics stored successfully:', result);
 
     } catch (error) {
       console.error('Error storing metrics:', error);
