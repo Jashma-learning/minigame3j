@@ -1,0 +1,37 @@
+{
+  "userId": "test-user-123",
+  "metrics": {
+    "inhibition": {
+      "accuracy": 0.85,
+      "interference": 0.25,
+      "congruentAccuracy": 0.92,
+      "incongruentAccuracy": 0.78,
+      "interferenceEffect": 0.14
+    },
+    "attention": {
+      "sustainedAttention": 0.82,
+      "vigilanceLevel": 0.79,
+      "attentionalLapses": 3,
+      "focusQuality": 0.76
+    },
+    "processing": {
+      "averageReactionTime": 650,
+      "congruentReactionTime": 580,
+      "incongruentReactionTime": 720,
+      "reactionTimeVariability": 85,
+      "processingEfficiency": 0.72
+    },
+    "flexibility": {
+      "adaptiveControl": 0.68,
+      "switchingCost": 150,
+      "errorRecovery": 0.75,
+      "strategyDevelopment": 0.65
+    },
+    "overall": {
+      "performanceScore": 78,
+      "cognitiveFatigue": 0.22,
+      "consistencyIndex": 0.81,
+      "compositeScore": 75
+    }
+  }
+} 

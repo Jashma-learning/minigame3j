@@ -1,0 +1,509 @@
+{
+  "users": {
+    "test-user-123": {
+      "assessments": [
+        {
+          "sessionId": "eef42874-c2d1-4b97-936f-7f932d8d4afa",
+          "timestamp": 1740984398778,
+          "metrics": {
+            "inhibition": {
+              "accuracy": 0.85,
+              "interference": 0.25,
+              "congruentAccuracy": 0.92,
+              "incongruentAccuracy": 0.78,
+              "interferenceEffect": 0.14
+            },
+            "attention": {
+              "sustainedAttention": 0.82,
+              "vigilanceLevel": 0.79,
+              "attentionalLapses": 3,
+              "focusQuality": 0.76
+            },
+            "processing": {
+              "averageReactionTime": 650,
+              "congruentReactionTime": 580,
+              "incongruentReactionTime": 720,
+              "reactionTimeVariability": 85,
+              "processingEfficiency": 0.72
+            },
+            "flexibility": {
+              "adaptiveControl": 0.68,
+              "switchingCost": 150,
+              "errorRecovery": 0.75,
+              "strategyDevelopment": 0.65
+            },
+            "overall": {
+              "performanceScore": 78,
+              "cognitiveFatigue": 0.22,
+              "consistencyIndex": 0.81,
+              "compositeScore": 75
+            }
+          },
+          "environmentFactors": {
+            "timeOfDay": 12,
+            "dayOfWeek": 1,
+            "completionTime": 0
+          }
+        }
+      ],
+      "progress": {
+        "inhibition": {
+          "improvement": 0,
+          "consistency": 100
+        },
+        "attention": {
+          "improvement": 0,
+          "consistency": 100
+        },
+        "processing": {
+          "improvement": 0,
+          "consistency": 100
+        },
+        "flexibility": {
+          "improvement": 0,
+          "consistency": 100
+        },
+        "overall": {
+          "improvement": 0,
+          "consistency": 100
+        }
+      },
+      "percentileRanking": {
+        "inhibition": {
+          "accuracy": 100,
+          "interference": 100,
+          "congruentAccuracy": 100,
+          "incongruentAccuracy": 100,
+          "interferenceEffect": 100
+        },
+        "attention": {
+          "sustainedAttention": 100,
+          "vigilanceLevel": 100,
+          "attentionalLapses": 100,
+          "focusQuality": 100
+        },
+        "processing": {
+          "averageReactionTime": 100,
+          "congruentReactionTime": 100,
+          "incongruentReactionTime": 100,
+          "reactionTimeVariability": 100,
+          "processingEfficiency": 100
+        },
+        "flexibility": {
+          "adaptiveControl": 100,
+          "switchingCost": 100,
+          "errorRecovery": 100,
+          "strategyDevelopment": 100
+        },
+        "overall": {
+          "performanceScore": 100,
+          "cognitiveFatigue": 100,
+          "consistencyIndex": 100,
+          "compositeScore": 100
+        }
+      },
+      "cognitiveProfile": {
+        "inhibition": {
+          "baseline": {
+            "inhibition": {
+              "accuracy": 0.85,
+              "interference": 0.25,
+              "congruentAccuracy": 0.92,
+              "incongruentAccuracy": 0.78,
+              "interferenceEffect": 0.14
+            },
+            "attention": {
+              "sustainedAttention": 0.82,
+              "vigilanceLevel": 0.79,
+              "attentionalLapses": 3,
+              "focusQuality": 0.76
+            },
+            "processing": {
+              "averageReactionTime": 650,
+              "congruentReactionTime": 580,
+              "incongruentReactionTime": 720,
+              "reactionTimeVariability": 85,
+              "processingEfficiency": 0.72
+            },
+            "flexibility": {
+              "adaptiveControl": 0.68,
+              "switchingCost": 150,
+              "errorRecovery": 0.75,
+              "strategyDevelopment": 0.65
+            },
+            "overall": {
+              "performanceScore": 78,
+              "cognitiveFatigue": 0.22,
+              "consistencyIndex": 0.81,
+              "compositeScore": 75
+            }
+          },
+          "trend": [
+            {
+              "timestamp": 1740984398778,
+              "metrics": {
+                "inhibition": {
+                  "accuracy": 0.85,
+                  "interference": 0.25,
+                  "congruentAccuracy": 0.92,
+                  "incongruentAccuracy": 0.78,
+                  "interferenceEffect": 0.14
+                },
+                "attention": {
+                  "sustainedAttention": 0.82,
+                  "vigilanceLevel": 0.79,
+                  "attentionalLapses": 3,
+                  "focusQuality": 0.76
+                },
+                "processing": {
+                  "averageReactionTime": 650,
+                  "congruentReactionTime": 580,
+                  "incongruentReactionTime": 720,
+                  "reactionTimeVariability": 85,
+                  "processingEfficiency": 0.72
+                },
+                "flexibility": {
+                  "adaptiveControl": 0.68,
+                  "switchingCost": 150,
+                  "errorRecovery": 0.75,
+                  "strategyDevelopment": 0.65
+                },
+                "overall": {
+                  "performanceScore": 78,
+                  "cognitiveFatigue": 0.22,
+                  "consistencyIndex": 0.81,
+                  "compositeScore": 75
+                }
+              }
+            }
+          ]
+        },
+        "attention": {
+          "baseline": {
+            "inhibition": {
+              "accuracy": 0.85,
+              "interference": 0.25,
+              "congruentAccuracy": 0.92,
+              "incongruentAccuracy": 0.78,
+              "interferenceEffect": 0.14
+            },
+            "attention": {
+              "sustainedAttention": 0.82,
+              "vigilanceLevel": 0.79,
+              "attentionalLapses": 3,
+              "focusQuality": 0.76
+            },
+            "processing": {
+              "averageReactionTime": 650,
+              "congruentReactionTime": 580,
+              "incongruentReactionTime": 720,
+              "reactionTimeVariability": 85,
+              "processingEfficiency": 0.72
+            },
+            "flexibility": {
+              "adaptiveControl": 0.68,
+              "switchingCost": 150,
+              "errorRecovery": 0.75,
+              "strategyDevelopment": 0.65
+            },
+            "overall": {
+              "performanceScore": 78,
+              "cognitiveFatigue": 0.22,
+              "consistencyIndex": 0.81,
+              "compositeScore": 75
+            }
+          },
+          "trend": [
+            {
+              "timestamp": 1740984398778,
+              "metrics": {
+                "inhibition": {
+                  "accuracy": 0.85,
+                  "interference": 0.25,
+                  "congruentAccuracy": 0.92,
+                  "incongruentAccuracy": 0.78,
+                  "interferenceEffect": 0.14
+                },
+                "attention": {
+                  "sustainedAttention": 0.82,
+                  "vigilanceLevel": 0.79,
+                  "attentionalLapses": 3,
+                  "focusQuality": 0.76
+                },
+                "processing": {
+                  "averageReactionTime": 650,
+                  "congruentReactionTime": 580,
+                  "incongruentReactionTime": 720,
+                  "reactionTimeVariability": 85,
+                  "processingEfficiency": 0.72
+                },
+                "flexibility": {
+                  "adaptiveControl": 0.68,
+                  "switchingCost": 150,
+                  "errorRecovery": 0.75,
+                  "strategyDevelopment": 0.65
+                },
+                "overall": {
+                  "performanceScore": 78,
+                  "cognitiveFatigue": 0.22,
+                  "consistencyIndex": 0.81,
+                  "compositeScore": 75
+                }
+              }
+            }
+          ]
+        },
+        "processing": {
+          "baseline": {
+            "inhibition": {
+              "accuracy": 0.85,
+              "interference": 0.25,
+              "congruentAccuracy": 0.92,
+              "incongruentAccuracy": 0.78,
+              "interferenceEffect": 0.14
+            },
+            "attention": {
+              "sustainedAttention": 0.82,
+              "vigilanceLevel": 0.79,
+              "attentionalLapses": 3,
+              "focusQuality": 0.76
+            },
+            "processing": {
+              "averageReactionTime": 650,
+              "congruentReactionTime": 580,
+              "incongruentReactionTime": 720,
+              "reactionTimeVariability": 85,
+              "processingEfficiency": 0.72
+            },
+            "flexibility": {
+              "adaptiveControl": 0.68,
+              "switchingCost": 150,
+              "errorRecovery": 0.75,
+              "strategyDevelopment": 0.65
+            },
+            "overall": {
+              "performanceScore": 78,
+              "cognitiveFatigue": 0.22,
+              "consistencyIndex": 0.81,
+              "compositeScore": 75
+            }
+          },
+          "trend": [
+            {
+              "timestamp": 1740984398778,
+              "metrics": {
+                "inhibition": {
+                  "accuracy": 0.85,
+                  "interference": 0.25,
+                  "congruentAccuracy": 0.92,
+                  "incongruentAccuracy": 0.78,
+                  "interferenceEffect": 0.14
+                },
+                "attention": {
+                  "sustainedAttention": 0.82,
+                  "vigilanceLevel": 0.79,
+                  "attentionalLapses": 3,
+                  "focusQuality": 0.76
+                },
+                "processing": {
+                  "averageReactionTime": 650,
+                  "congruentReactionTime": 580,
+                  "incongruentReactionTime": 720,
+                  "reactionTimeVariability": 85,
+                  "processingEfficiency": 0.72
+                },
+                "flexibility": {
+                  "adaptiveControl": 0.68,
+                  "switchingCost": 150,
+                  "errorRecovery": 0.75,
+                  "strategyDevelopment": 0.65
+                },
+                "overall": {
+                  "performanceScore": 78,
+                  "cognitiveFatigue": 0.22,
+                  "consistencyIndex": 0.81,
+                  "compositeScore": 75
+                }
+              }
+            }
+          ]
+        },
+        "flexibility": {
+          "baseline": {
+            "inhibition": {
+              "accuracy": 0.85,
+              "interference": 0.25,
+              "congruentAccuracy": 0.92,
+              "incongruentAccuracy": 0.78,
+              "interferenceEffect": 0.14
+            },
+            "attention": {
+              "sustainedAttention": 0.82,
+              "vigilanceLevel": 0.79,
+              "attentionalLapses": 3,
+              "focusQuality": 0.76
+            },
+            "processing": {
+              "averageReactionTime": 650,
+              "congruentReactionTime": 580,
+              "incongruentReactionTime": 720,
+              "reactionTimeVariability": 85,
+              "processingEfficiency": 0.72
+            },
+            "flexibility": {
+              "adaptiveControl": 0.68,
+              "switchingCost": 150,
+              "errorRecovery": 0.75,
+              "strategyDevelopment": 0.65
+            },
+            "overall": {
+              "performanceScore": 78,
+              "cognitiveFatigue": 0.22,
+              "consistencyIndex": 0.81,
+              "compositeScore": 75
+            }
+          },
+          "trend": [
+            {
+              "timestamp": 1740984398778,
+              "metrics": {
+                "inhibition": {
+                  "accuracy": 0.85,
+                  "interference": 0.25,
+                  "congruentAccuracy": 0.92,
+                  "incongruentAccuracy": 0.78,
+                  "interferenceEffect": 0.14
+                },
+                "attention": {
+                  "sustainedAttention": 0.82,
+                  "vigilanceLevel": 0.79,
+                  "attentionalLapses": 3,
+                  "focusQuality": 0.76
+                },
+                "processing": {
+                  "averageReactionTime": 650,
+                  "congruentReactionTime": 580,
+                  "incongruentReactionTime": 720,
+                  "reactionTimeVariability": 85,
+                  "processingEfficiency": 0.72
+                },
+                "flexibility": {
+                  "adaptiveControl": 0.68,
+                  "switchingCost": 150,
+                  "errorRecovery": 0.75,
+                  "strategyDevelopment": 0.65
+                },
+                "overall": {
+                  "performanceScore": 78,
+                  "cognitiveFatigue": 0.22,
+                  "consistencyIndex": 0.81,
+                  "compositeScore": 75
+                }
+              }
+            }
+          ]
+        },
+        "overall": {
+          "baseline": {
+            "inhibition": {
+              "accuracy": 0.85,
+              "interference": 0.25,
+              "congruentAccuracy": 0.92,
+              "incongruentAccuracy": 0.78,
+              "interferenceEffect": 0.14
+            },
+            "attention": {
+              "sustainedAttention": 0.82,
+              "vigilanceLevel": 0.79,
+              "attentionalLapses": 3,
+              "focusQuality": 0.76
+            },
+            "processing": {
+              "averageReactionTime": 650,
+              "congruentReactionTime": 580,
+              "incongruentReactionTime": 720,
+              "reactionTimeVariability": 85,
+              "processingEfficiency": 0.72
+            },
+            "flexibility": {
+              "adaptiveControl": 0.68,
+              "switchingCost": 150,
+              "errorRecovery": 0.75,
+              "strategyDevelopment": 0.65
+            },
+            "overall": {
+              "performanceScore": 78,
+              "cognitiveFatigue": 0.22,
+              "consistencyIndex": 0.81,
+              "compositeScore": 75
+            }
+          },
+          "trend": [
+            {
+              "timestamp": 1740984398778,
+              "metrics": {
+                "inhibition": {
+                  "accuracy": 0.85,
+                  "interference": 0.25,
+                  "congruentAccuracy": 0.92,
+                  "incongruentAccuracy": 0.78,
+                  "interferenceEffect": 0.14
+                },
+                "attention": {
+                  "sustainedAttention": 0.82,
+                  "vigilanceLevel": 0.79,
+                  "attentionalLapses": 3,
+                  "focusQuality": 0.76
+                },
+                "processing": {
+                  "averageReactionTime": 650,
+                  "congruentReactionTime": 580,
+                  "incongruentReactionTime": 720,
+                  "reactionTimeVariability": 85,
+                  "processingEfficiency": 0.72
+                },
+                "flexibility": {
+                  "adaptiveControl": 0.68,
+                  "switchingCost": 150,
+                  "errorRecovery": 0.75,
+                  "strategyDevelopment": 0.65
+                },
+                "overall": {
+                  "performanceScore": 78,
+                  "cognitiveFatigue": 0.22,
+                  "consistencyIndex": 0.81,
+                  "compositeScore": 75
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "aggregateStats": {
+    "totalAssessments": 1,
+    "averageScores": {
+      "inhibition": {
+        "accuracy": 0.85,
+        "interference": 0.25
+      },
+      "attention": {
+        "sustainedAttention": 0.82,
+        "vigilanceLevel": 0.79
+      },
+      "processing": {
+        "averageReactionTime": 650,
+        "processingEfficiency": 0.72
+      },
+      "flexibility": {
+        "adaptiveControl": 0.68,
+        "errorRecovery": 0.75
+      },
+      "overall": {
+        "performanceScore": 78,
+        "compositeScore": 75
+      }
+    }
+  }
+}
